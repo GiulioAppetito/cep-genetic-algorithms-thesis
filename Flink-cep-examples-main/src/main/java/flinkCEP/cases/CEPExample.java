@@ -11,17 +11,14 @@ import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.cep.nfa.aftermatch.AfterMatchSkipStrategy;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.serialization.SimpleStringEncoder;
-import org.apache.flink.core.fs.Path;
 
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
-public class CsvReaderExample {
+public class CEPExample {
 
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -56,8 +53,8 @@ public class CsvReaderExample {
                 ;
 
         // PATTERN
-        int failedAttempts = 5;
-        float timeoutSeconds = 1;
+        int failedAttempts = 15;
+        float timeoutSeconds = 10;
 
         AfterMatchSkipStrategy noSkip = AfterMatchSkipStrategy.noSkip();
         AfterMatchSkipStrategy skipToNext = AfterMatchSkipStrategy.skipToNext();
@@ -65,7 +62,7 @@ public class CsvReaderExample {
         AfterMatchSkipStrategy skipToFirst = AfterMatchSkipStrategy.skipToFirst("failures");
         AfterMatchSkipStrategy skipToLast = AfterMatchSkipStrategy.skipToLast("failures");
 
-        AfterMatchSkipStrategy skipStrategy = skipToLast;
+        AfterMatchSkipStrategy skipStrategy = noSkip;
 
         Pattern<LoginEvent, ?> loginFailPattern = Pattern.<LoginEvent>begin("failures", skipStrategy)
                 .where(new SimpleCondition<LoginEvent>() {
@@ -74,7 +71,7 @@ public class CsvReaderExample {
                         return !event.successfulLogin; // Verifica se il login è fallito
                     }
                 })
-                .times(failedAttempts)  // Ripete il pattern per 'failedAttempts' volte
+                .timesOrMore(failedAttempts)  // Ripete il pattern per 'failedAttempts' volte
                 .within(Time.seconds((long) timeoutSeconds)); // Deve accadere entro 'timeoutSeconds' secondi
 
         // apply the pattern to data
@@ -92,10 +89,13 @@ public class CsvReaderExample {
                         LoginEvent firstFail = failures.get(0);  // Primo evento (inizio della finestra)
                         LoginEvent lastFail = failures.get(failures.size() - 1);  // Ultimo evento (fine della finestra)
 
-                        // Restituisce il messaggio con l'inizio e la fine della finestra temporale
-                        return "Rilevati " + failures.size() + " tentativi di login falliti per IP: " +
-                                firstFail.ipAddress + " tra " +
-                                firstFail.timestamp + " e " + lastFail.timestamp;
+                        float interval = (float) (lastFail.timestamp - firstFail.timestamp) /1000;
+
+                        // returns windows interval
+                        return "Failures: " + failures.size() + " | IP: " +
+                                firstFail.ipAddress +
+                                " | Between " + firstFail.timestamp + " and " + lastFail.timestamp +
+                                " | Window elapsed time: "+ interval + " seconds.";
                     }
                 }
         );
