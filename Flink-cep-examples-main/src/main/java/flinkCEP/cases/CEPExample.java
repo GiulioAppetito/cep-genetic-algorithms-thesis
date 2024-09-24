@@ -31,24 +31,16 @@ public class CEPExample {
         // parsing every row in LoginEvent
         DataStream<LoginEvent> loginEventStream = csvData
                 .filter(line -> !line.startsWith("timestamp"))  // ignora l'intestazione
-                .map(new MapFunction<String, LoginEvent>() {
-                    @Override
-                    public LoginEvent map(String line) throws Exception {
-                        String[] fields = line.split(",");
-                        long timestamp = Long.parseLong(fields[0]);
-                        String ipAddress = fields[1];
-                        boolean successfulLogin = Boolean.parseBoolean(fields[2]);
-                        return new LoginEvent(timestamp, ipAddress, successfulLogin);
-                    }
+                .map((MapFunction<String, LoginEvent>) line -> {
+                    String[] fields = line.split(",");
+                    long timestamp = Long.parseLong(fields[0]);
+                    String ipAddress = fields[1];
+                    boolean successfulLogin = Boolean.parseBoolean(fields[2]);
+                    return new LoginEvent(timestamp, ipAddress, successfulLogin);
                 })
                 .assignTimestampsAndWatermarks(
                         WatermarkStrategy.<LoginEvent>forBoundedOutOfOrderness(Duration.ofSeconds(5))
-                                .withTimestampAssigner(new SerializableTimestampAssigner<LoginEvent>() {
-                                    @Override
-                                    public long extractTimestamp(LoginEvent loginEvent, long recordTimestamp) {
-                                        return loginEvent.getTimestamp();
-                                    }
-                                })
+                                .withTimestampAssigner((SerializableTimestampAssigner<LoginEvent>) (loginEvent, recordTimestamp) -> loginEvent.getTimestamp())
                 )
                 ;
 
@@ -82,21 +74,18 @@ public class CEPExample {
 
         // select events matching the pattern
         DataStream<String> alerts = patternStream.select(
-                new PatternSelectFunction<LoginEvent, String>() {
-                    @Override
-                    public String select(Map<String, List<LoginEvent>> pattern) {
-                        List<LoginEvent> failures = pattern.get("failures"); // Usa la chiave "failures"
-                        LoginEvent firstFail = failures.get(0);  // Primo evento (inizio della finestra)
-                        LoginEvent lastFail = failures.get(failures.size() - 1);  // Ultimo evento (fine della finestra)
+                (PatternSelectFunction<LoginEvent, String>) pattern -> {
+                    List<LoginEvent> failures = pattern.get("failures"); // Usa la chiave "failures"
+                    LoginEvent firstFail = failures.get(0);  // Primo evento (inizio della finestra)
+                    LoginEvent lastFail = failures.get(failures.size() - 1);  // Ultimo evento (fine della finestra)
 
-                        float interval = (float) (lastFail.timestamp - firstFail.timestamp) /1000;
+                    float interval = (float) (lastFail.timestamp - firstFail.timestamp) /1000;
 
-                        // returns windows interval
-                        return "Failures: " + failures.size() + " | IP: " +
-                                firstFail.ipAddress +
-                                " | Between " + firstFail.timestamp + " and " + lastFail.timestamp +
-                                " | Window elapsed time: "+ interval + " seconds.";
-                    }
+                    // returns windows interval
+                    return "Failures: " + failures.size() + " | IP: " +
+                            firstFail.ipAddress +
+                            " | Between " + firstFail.timestamp + " and " + lastFail.timestamp +
+                            " | Window elapsed time: "+ interval + " seconds.";
                 }
         );
         alerts.print();
