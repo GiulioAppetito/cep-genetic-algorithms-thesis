@@ -1,9 +1,9 @@
 package flinkCEP.events;
 
 public class LoginEvent {
-    public long timestamp;
-    public String ipAddress;
-    public boolean successfulLogin;
+    private long timestamp;
+    private String ipAddress;
+    private boolean successfulLogin;
 
     public LoginEvent(long timestamp, String ipAddress, boolean successfulLogin) {
         this.timestamp = timestamp;
@@ -11,16 +11,15 @@ public class LoginEvent {
         this.successfulLogin = successfulLogin;
     }
 
-    @Override
-    public String toString() {
-        return "LoginEvent{" +
-                "timestamp=" + timestamp +
-                ", ipAddress='" + ipAddress + '\'' +
-                ", successfulLogin=" + successfulLogin +
-                '}';
+    public long getTimestamp() {
+        return timestamp;
     }
 
-    public long getTimestamp() {
-        return this.timestamp;
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public boolean isSuccessfulLogin() {
+        return successfulLogin;
     }
 }
