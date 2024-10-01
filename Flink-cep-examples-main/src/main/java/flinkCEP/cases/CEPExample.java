@@ -1,5 +1,6 @@
 package flinkCEP.cases;
 
+import flinkCEP.events.LoginEvent;
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.cep.PatternSelectFunction;
@@ -12,23 +13,22 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-
-
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 
 public class CEPExample {
 
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
+        // csv file path
         String inputPath = "C:\\Users\\giuli\\OneDrive\\Desktop\\Tesi\\Datasets\\processed-sshd-logs\\processed-sshd-logs\\athena-sshd-processed-simple.csv";
 
+        // DataStream from the csv
         DataStream<String> csvData;
         csvData = env.readTextFile(inputPath);
 
-        // parsing every row in LoginEvent
+        // parsing every row in a LoginEvent object
         DataStream<LoginEvent> loginEventStream = csvData
                 .filter(line -> !line.startsWith("timestamp"))  // ignora l'intestazione
                 .map((MapFunction<String, LoginEvent>) line -> {
@@ -44,18 +44,21 @@ public class CEPExample {
                 )
                 ;
 
-        // PATTERN
-        int failedAttempts = 15;
-        float timeoutSeconds = 10;
+        // Pattern parameters
+        int failedAttempts = 5; // Number of failed attempts in the window
+        float timeoutSeconds = 2; // Window interval length in seconds
 
+        // Skip strategy declarations
         AfterMatchSkipStrategy noSkip = AfterMatchSkipStrategy.noSkip();
         AfterMatchSkipStrategy skipToNext = AfterMatchSkipStrategy.skipToNext();
         AfterMatchSkipStrategy skipPastLastEvent = AfterMatchSkipStrategy.skipPastLastEvent();
         AfterMatchSkipStrategy skipToFirst = AfterMatchSkipStrategy.skipToFirst("failures");
         AfterMatchSkipStrategy skipToLast = AfterMatchSkipStrategy.skipToLast("failures");
 
+        // Skip strategy selection
         AfterMatchSkipStrategy skipStrategy = noSkip;
 
+        // Pattern definition
         Pattern<LoginEvent, ?> loginFailPattern = Pattern.<LoginEvent>begin("failures", skipStrategy)
                 .where(new SimpleCondition<LoginEvent>() {
                     @Override
@@ -82,8 +85,8 @@ public class CEPExample {
                     float interval = (float) (lastFail.timestamp - firstFail.timestamp) /1000;
 
                     // returns windows interval
-                    return "Failures: " + failures.size() + " | IP: " +
-                            firstFail.ipAddress +
+                    return "Failures: " + failures.size() +
+                            " | IP: " + firstFail.ipAddress +
                             " | Between " + firstFail.timestamp + " and " + lastFail.timestamp +
                             " | Window elapsed time: "+ interval + " seconds.";
                 }

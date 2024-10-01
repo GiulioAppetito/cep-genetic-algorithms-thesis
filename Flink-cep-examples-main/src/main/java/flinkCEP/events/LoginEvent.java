@@ -1,4 +1,4 @@
-package flinkCEP.cases;
+package flinkCEP.events;
 
 public class LoginEvent {
     public long timestamp;
