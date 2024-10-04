@@ -1,5 +1,12 @@
-# FlinkCEP-examples
+# FlinkCEP Genetic Algorithm Sandbox
 
-Using Apache [Flink CEP](https://github.com/apache/flink) to design simple use cases.
+This project is a sandbox for my master thesis. At the moment, no Genetic Algorithms (GA) is used; instead, the goal here is to define a genotype for the solutions and a mapping from genotype to fenotype. 
 
-Examples are based on Flink CEP (Java version 1.8, Flink version 1.8.0). Each CEPCase detects an event pattern based on different contiguity conditions and after match skip strategies. 
+## Features
+- **Genotype representation**: A genotype represents the configuration of a Flink CEP query, involving parameters such as number of failed login attempts, a timeout (window width), and an event skip strategy.
+- **Flink CEP query generation**: The genotype is mapped to a Flink CEP query that can detect certain patterns.
+
+## Project Structure
+- `Genotype.java`: Defines the genotype, which includes parameters for the CEP query. This class includes a method to generate randomized genotypes (just for testing purposes).
+- `FlinkCEPQuery.java`: This represents a Flink CEP query that detects patterns.
+- `LoginEvent.java`: Defines the events in the stream, specifically login attempts, including attributes like timestamp, IP address, and success or failure.
