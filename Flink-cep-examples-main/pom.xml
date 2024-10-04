@@ -65,6 +65,11 @@
 			<version>5.6.0</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.antlr</groupId>
+			<artifactId>antlr4</artifactId>
+			<version>4.13.2</version>
+		</dependency>
 
 		<!-- Log4j for logging -->
 		<dependency>
