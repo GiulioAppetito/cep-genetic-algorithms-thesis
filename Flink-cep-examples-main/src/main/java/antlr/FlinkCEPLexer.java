@@ -1,12 +1,9 @@
-// Generated from C:/Users/giuli/IdeaProjects/Sandbox_Thesis_Chalmers_2/Flink-cep-examples-main/src/main/antlr4/FlinkCEP.g4 by ANTLR 4.13.1
+package antlr;// Generated from C:/Users/giuli/IdeaProjects/Sandbox_Thesis_Chalmers_2/Flink-cep-examples-main/src/main/antlr4/FlinkCEPGrammar.g4 by ANTLR 4.13.1
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
-import org.antlr.v4.runtime.misc.*;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast", "CheckReturnValue", "this-escape"})
 public class FlinkCEPLexer extends Lexer {
@@ -88,7 +85,7 @@ public class FlinkCEPLexer extends Lexer {
 	}
 
 	@Override
-	public String getGrammarFileName() { return "FlinkCEP.g4"; }
+	public String getGrammarFileName() { return "FlinkCEPGrammar.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }
