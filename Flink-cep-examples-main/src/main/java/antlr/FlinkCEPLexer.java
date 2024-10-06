@@ -1,4 +1,4 @@
-package antlr;// Generated from C:/Users/giuli/IdeaProjects/Sandbox_Thesis_Chalmers_2/Flink-cep-examples-main/src/main/antlr4/FlinkCEPGrammar.g4 by ANTLR 4.13.1
+package antlr;// Generated from C:/Users/giuli/IdeaProjects/Sandbox_Thesis_Chalmers_2/Flink-cep-examples-main/src/main/antlr4/FlinkCEP.g4 by ANTLR 4.13.1
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.*;
@@ -85,7 +85,7 @@ public class FlinkCEPLexer extends Lexer {
 	}
 
 	@Override
-	public String getGrammarFileName() { return "FlinkCEPGrammar.g4"; }
+	public String getGrammarFileName() { return "FlinkCEP.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }

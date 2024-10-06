@@ -3,10 +3,12 @@ package cep;
 public class Event {
     private String ipAddress;
     private boolean successfulLogin;
+    private long timestamp;
 
-    public Event(String ipAddress, boolean successfulLogin) {
+    public Event(String ipAddress, boolean successfulLogin, long timestamp) {
         this.ipAddress = ipAddress;
         this.successfulLogin = successfulLogin;
+        this.timestamp = timestamp;
     }
 
     public String getIpAddress() {
@@ -15,6 +17,10 @@ public class Event {
 
     public boolean isSuccessfulLogin() {
         return successfulLogin;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
     }
 
     public Object getField(String fieldName) {
@@ -33,6 +39,7 @@ public class Event {
         return "Event{" +
                 "ipAddress='" + ipAddress + '\'' +
                 ", successfulLogin=" + successfulLogin +
+                ", timestamp=" + timestamp +
                 '}';
     }
 }
