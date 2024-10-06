@@ -1,52 +1,74 @@
 grammar FlinkCEP;
 
-// Il pattern è la radice dell'albero che combina eventi e sequenze
 pattern
-    : eventSequence (timeWindow)?  // Un pattern è una sequenza di eventi con una finestra temporale opzionale
+    : eventSequence (timeWindow)?  // Pattern principale con una sequenza di eventi e finestra temporale opzionale
     ;
 
-// La sequenza collega eventi o altre sequenze usando 'next'
 eventSequence
-    : event (nextSequence)?
+    : event (nextEvent | followedByEvent | followedByAnyEvent | notNextEvent | notFollowedByEvent)?
+    ;  // Supporto per next, followedBy, notNext, ecc.
+
+nextEvent
+    : 'next' eventSequence
     ;
 
-nextSequence
-    : 'next' eventSequence  // 'next' collega un evento o una sequenza di eventi
+followedByEvent
+    : 'followedBy' eventSequence  // Contiguità rilassata
     ;
 
-// Un evento è un nodo foglia dell'albero, con una condizione
+followedByAnyEvent
+    : 'followedByAny' eventSequence  // Contiguità non deterministica
+    ;
+
+notNextEvent
+    : 'notNext' eventSequence  // Negazione con contiguità stretta
+    ;
+
+notFollowedByEvent
+    : 'notFollowedBy' eventSequence  // Negazione con contiguità rilassata
+    ;
+
 event
-    : 'begin' condition  // Ogni evento inizia con 'begin' seguito da una condizione
+    : 'begin' conditions quantifier?
     ;
 
-// Una condizione è la logica associata all'evento (campo, operatore, valore)
+conditions
+    : condition (logicalOperator condition)*
+    ;
+
 condition
-    : eventField comparisonOperator value  // Condizione basata su un campo evento, un operatore e un valore
+    : eventField comparisonOperator value
     ;
 
-// La finestra temporale si applica alla sequenza di eventi
+quantifier
+    : 'times(' NUMBER ')'
+    | 'oneOrMore()'  // Aggiungi supporto per 'oneOrMore'
+    | 'optional()'   // Aggiungi supporto per 'optional'
+    | 'timesOrMore(' NUMBER ')'  // Aggiungi supporto per 'timesOrMore'
+    ;
+
+logicalOperator
+    : 'AND' | 'OR'
+    ;
+
 timeWindow
     : 'within(' 'Time.seconds(' NUMBER '))'
     ;
 
-// Operatori di confronto
 comparisonOperator
     : '==' | '!=' | '>' | '<'
     ;
 
-// Campo dell'evento
 eventField
-    : ID  // Identificatore del campo evento
+    : ID
     ;
 
-// Valori per il confronto (booleani, stringhe, numeri)
 value
     : BOOLEAN | STRING | NUMBER
     ;
 
-// Definizione di tipi di base
-BOOLEAN : 'True' | 'False' ;  // Valori booleani
-ID      : [a-zA-Z_][a-zA-Z0-9_]* ;  // Identificatori validi per i campi evento
-STRING  : '"' (~["\\] | '\\' .)* '"' ;  // Stringhe con caratteri di escape
-NUMBER  : [0-9]+ ;  // Numeri interi
-WS      : [ \t\r\n]+ -> skip ;  // Ignora spazi bianchi
+BOOLEAN : 'True' | 'False' ;
+ID      : [a-zA-Z_][a-zA-Z0-9_]* ;
+STRING  : '"' (~["\\] | '\\' .)* '"' ;
+NUMBER  : [0-9]+ ;
+WS      : [ \t\r\n]+ -> skip ;
