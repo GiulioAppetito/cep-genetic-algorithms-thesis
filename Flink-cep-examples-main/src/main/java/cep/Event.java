@@ -1,45 +1,35 @@
 package cep;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Event {
-    private String ipAddress;
-    private boolean successfulLogin;
-    private long timestamp;
 
-    public Event(String ipAddress, boolean successfulLogin, long timestamp) {
-        this.ipAddress = ipAddress;
-        this.successfulLogin = successfulLogin;
-        this.timestamp = timestamp;
+    // Mappa che rappresenta i campi dell'evento e i loro valori
+    private Map<String, Object> fields;
+
+    // Costruttore che accetta i valori dell'evento
+    public Event(String ip, boolean login) {
+        fields = new HashMap<>();
+        fields.put("ip", ip);       // Campo 'ip'
+        fields.put("login", login); // Campo 'login'
     }
 
-    public String getIpAddress() {
-        return ipAddress;
+    // Metodo per ottenere il valore di un campo specifico
+    public Object getField(String key) {
+        return fields.get(key);  // Restituisce il valore del campo corrispondente al nome 'key'
     }
 
-    public boolean isSuccessfulLogin() {
-        return successfulLogin;
+    // Metodo per aggiungere altri campi se necessario
+    public void addField(String key, Object value) {
+        fields.put(key, value);  // Aggiunge un nuovo campo o aggiorna un campo esistente
     }
 
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public Object getField(String fieldName) {
-        switch (fieldName) {
-            case "ip_address":
-                return getIpAddress();
-            case "successful_login":
-                return isSuccessfulLogin();
-            default:
-                throw new IllegalArgumentException("Campo sconosciuto: " + fieldName);
-        }
-    }
-
+    // Metodo toString per il debug o per la visualizzazione
     @Override
     public String toString() {
         return "Event{" +
-                "ipAddress='" + ipAddress + '\'' +
-                ", successfulLogin=" + successfulLogin +
-                ", timestamp=" + timestamp +
+                "fields=" + fields +
                 '}';
     }
 }
