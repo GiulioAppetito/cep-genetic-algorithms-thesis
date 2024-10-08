@@ -1,4 +1,4 @@
-package cep;
+package cep.events;
 
 public class LoginEvent {
     private long timestamp;
