@@ -13,6 +13,7 @@ import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,6 +26,9 @@ public class Main {
 
         final String directory = "C:\\Users\\giuli\\OneDrive\\Desktop\\Tesi\\Thesis\\Datasets\\processed-sshd-logs\\processed-sshd-logs\\";
         final String filename = "ithaca-sshd-processed-simple.csv";
+
+        // Pattern type selection
+        PatternFactory.PatternType selectedPatternType = PatternFactory.PatternType.MULTIPLE_FAILURES_FOLLOWED_BY_SUCCESS_PATTERN;
 
         // Read the CSV file and create a DataStream
         DataStream<LoginEvent> loginEventStream = env
@@ -53,7 +57,8 @@ public class Main {
         KeyedStream<LoginEvent, String> keyedStream = loginEventStream.keyBy(LoginEvent::getIpAddress);
 
         // Choose a pattern using the PatternFactory
-        Pattern<LoginEvent, ?> chosenPattern = PatternFactory.getPattern(PatternFactory.PatternType.LOGIN_BURST_PATTERN);
+
+        Pattern<LoginEvent, ?> chosenPattern = PatternFactory.getPattern(selectedPatternType);
 
         // Apply the pattern to the keyed stream
         PatternStream<LoginEvent> patternStream = CEP.pattern(keyedStream, chosenPattern);
@@ -63,16 +68,34 @@ public class Main {
                 new PatternSelectFunction<LoginEvent, String>() {
                     @Override
                     public String select(Map<String, List<LoginEvent>> pattern) throws Exception {
-                        // Get events from pattern
-                        List<LoginEvent> events = pattern.get("fail") != null ? pattern.get("fail") : pattern.get("success");
+                        // Get the sequence of events from the pattern
+                        List<LoginEvent> allEvents = new ArrayList<>();
 
-                        // Create a string for the event sequence
-                        String sequence = events.stream()
-                                .map(event -> String.format("IP: %s, Timestamp: %d, Successful: %b",
-                                        event.getIpAddress(), event.getTimestamp(), event.isSuccessful()))
-                                .collect(Collectors.joining(" -> ")); // Use "->" to show event flow
+                        // Add fail events if they exist
+                        List<LoginEvent> failEvents = pattern.get("fail");
+                        if (failEvents != null) {
+                            allEvents.addAll(failEvents);
+                        }
 
-                        return "Pattern found: " + sequence;
+                        // Add success events if they exist
+                        List<LoginEvent> successEvents = pattern.get("success");
+                        if (successEvents != null) {
+                            allEvents.addAll(successEvents);
+                        }
+
+                        // Check if allEvents is not empty before processing
+                        if (!allEvents.isEmpty()) {
+                            // Create a string for the full event sequence
+                            String sequence = allEvents.stream()
+                                    .map(event -> String.format("IP: %s, Timestamp: %d, Successful: %b",
+                                            event.getIpAddress(), event.getTimestamp(), event.isSuccessful()))
+                                    .collect(Collectors.joining(" -> ")); // Use "->" to show event flow
+
+                            return "Pattern found: " + sequence;
+                        }
+
+                        // If no events were found, return a default message
+                        return "No matching events found";
                     }
                 }
         );

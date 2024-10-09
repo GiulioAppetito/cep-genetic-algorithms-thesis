@@ -11,7 +11,7 @@ public class PatternFactory {
         FAIL_THEN_SUCCESS,
         FAIL_THEN_SUCCESS_WITHIN_TIME_PATTERN,
         MULTIPLE_FAILURE_WITHIN_TIME_PATTERN,
-        LOGIN_BURST_PATTERN
+        MULTIPLE_FAILURES_FOLLOWED_BY_SUCCESS_PATTERN
     }
 
     public static Pattern<LoginEvent, ?> getPattern(PatternType patternType) {
@@ -24,8 +24,8 @@ public class PatternFactory {
                 return FailThenSuccessWithinTimePattern.getPattern();
             case MULTIPLE_FAILURE_WITHIN_TIME_PATTERN:
                 return MultipleFailuresWithinTimePattern.getPattern();
-            case LOGIN_BURST_PATTERN:
-                return LoginBurstPattern.getPattern(10,1);
+            case MULTIPLE_FAILURES_FOLLOWED_BY_SUCCESS_PATTERN:
+                return MultipleFailuresFollowedBySuccessPattern.getPattern();
             default:
                 throw new IllegalArgumentException("Unknown pattern type");
         }
