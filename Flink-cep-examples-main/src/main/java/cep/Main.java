@@ -21,13 +21,13 @@ import java.util.stream.Collectors;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        // Set up the streaming execution environment
+        // Environment and file path
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         final String directory = "C:\\Users\\giuli\\OneDrive\\Desktop\\Tesi\\Thesis\\Datasets\\processed-sshd-logs\\processed-sshd-logs\\";
         final String filename = "ithaca-sshd-processed-simple.csv";
 
-        // Pattern type selection
+        // Pattern type selection from factory
         PatternFactory.PatternType selectedPatternType = PatternFactory.PatternType.MULTIPLE_FAILURES_FOLLOWED_BY_SUCCESS_PATTERN;
 
         // Read the CSV file and create a DataStream
@@ -57,13 +57,12 @@ public class Main {
         KeyedStream<LoginEvent, String> keyedStream = loginEventStream.keyBy(LoginEvent::getIpAddress);
 
         // Choose a pattern using the PatternFactory
-
         Pattern<LoginEvent, ?> chosenPattern = PatternFactory.getPattern(selectedPatternType);
 
-        // Apply the pattern to the keyed stream
+        // Apply the pattern to keyed stream
         PatternStream<LoginEvent> patternStream = CEP.pattern(keyedStream, chosenPattern);
 
-        // Select the match and print the results
+        // Select the match and print results
         DataStream<String> resultStream = patternStream.select(
                 new PatternSelectFunction<LoginEvent, String>() {
                     @Override
@@ -100,10 +99,10 @@ public class Main {
                 }
         );
 
-        // Print the results
+        // Print results
         resultStream.print();
 
-        // Execute the job
+        // Execute job
         env.execute("Login Pattern Detection with Flink CEP");
     }
 }
