@@ -27,7 +27,7 @@ public class PatternFactory {
             case MULTIPLE_FAILURES_FOLLOWED_BY_SUCCESS_PATTERN:
                 return MultipleFailuresFollowedBySuccessPattern.getPattern();
             default:
-                throw new IllegalArgumentException("Unknown pattern type");
+                throw new IllegalArgumentException("Unknown pattern type selected.");
         }
     }
 }

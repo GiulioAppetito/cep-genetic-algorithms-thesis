@@ -1,9 +1,9 @@
 package cep.events;
 
 public class LoginEvent {
-    private long timestamp;
-    private String ipAddress;
-    private boolean successful;
+    private final long timestamp;
+    private final String ipAddress;
+    private final boolean successful;
 
     public LoginEvent(long timestamp, String ipAddress, boolean successful) {
         this.timestamp = timestamp;

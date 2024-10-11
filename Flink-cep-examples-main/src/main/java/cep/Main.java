@@ -28,7 +28,7 @@ public class Main {
         final String filename = "ithaca-sshd-processed-simple.csv";
 
         // Pattern type selection from factory
-        PatternFactory.PatternType selectedPatternType = PatternFactory.PatternType.MULTIPLE_FAILURES_FOLLOWED_BY_SUCCESS_PATTERN;
+        PatternFactory.PatternType selectedPatternType = PatternFactory.PatternType.FAIL_THEN_SUCCESS;
 
         // Read the CSV file and create a DataStream
         DataStream<LoginEvent> loginEventStream = env
