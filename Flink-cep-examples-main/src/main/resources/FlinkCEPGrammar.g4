@@ -37,7 +37,24 @@ withinClause
 
 // Conditions on events (relational operators with variables and values)
 condition
-    : 'where' variable relationalOp value
+    : 'where' conditionExpression
+    ;
+
+// Expression to concatenate more conditions
+conditionExpression
+    : conditionAtom (conditionOp conditionExpression)?
+    ;
+
+// Conditions operators
+conditionOp
+    : 'AND'
+    | 'OR'
+    | 'NOT'
+    ;
+
+// Atomic condition element in an expression
+conditionAtom
+    : variable relationalOp value
     ;
 
 // Relational operators necessary for conditions
@@ -60,7 +77,7 @@ variable
     : IDENTIFIER
     ;
 
-// Duration expressed in seconds, minutes, or hours
+// Duration of the window expressed in seconds, minutes, or hours
 DURATION
     : INT 's'   // seconds
     | INT 'm'   // minutes
