@@ -1,39 +1,51 @@
 grammar FlinkCEPGrammar;
 
-// Starting rule for event sequences
-sequence
-    : binaryOpEvent ('within' DURATION)? #EventSequenceWithDuration
+// Starting rule for event sequences, beginning with "begin" as in CEP (optional)
+pattern
+    : ('begin')? (IDENTIFIER)?  eventSequence withinClause?
     ;
 
-// Event with binary operator (ensuring operators are internal nodes)
-binaryOpEvent
-    : event binaryOp event  #BinaryOpNode
-    | event                #SingleEvent
+// Event sequence definition with binary operators and quantifiers
+eventSequence
+    : event (binaryOp event)*
     ;
 
-// Definition of a single event with an optional condition
+// Event with optional condition and quantifier
 event
-    : IDENTIFIER (condition)?  #EventWithCondition
+    : (IDENTIFIER)? (condition)? (quantifier)?
     ;
 
-// Binary operators are now internal nodes with sub-events
+// Binary operators connecting events to each other
 binaryOp
-    : 'next'         #NextOperator
-    | 'followedBy'   #FollowedByOperator
-    | 'followedByAny' #FollowedByAnyOperator
+    : 'next'
+    | 'followedBy'
+    | 'followedByAny'
+    ;
+
+// Quantifiers for repeating events
+quantifier
+    : 'timesOrMore' INT
+    | 'times' INT
+    | 'oneOrMore'
+    | 'optional'
+    ;
+
+// Within clause that acts as a parent to duration
+withinClause
+    : 'within' DURATION
     ;
 
 // Conditions on events (relational operators with variables and values)
 condition
-    : 'where' variable relationalOp value  #ConditionExpr
+    : 'where' variable relationalOp value
     ;
 
-// Relational operators for conditions
+// Relational operators necessary for conditions
 relationalOp
     : '==' | '!=' | '<' | '>' | '<=' | '>='
     ;
 
-// Values used in conditions (boolean, identifier, numeric, or string)
+// Values used in conditions (boolean, identifier, numeric, and string)
 value
     : 'true'
     | 'false'
@@ -43,7 +55,7 @@ value
     | STRING
     ;
 
-// Variables for conditions
+// Variables used in conditions
 variable
     : IDENTIFIER
     ;
@@ -69,10 +81,10 @@ STRING
     ;
 
 IDENTIFIER
-    : [a-zA-Z_][a-zA-Z_0-9]*
+    : [a-zA-Z_0-9][a-zA-Z_0-9]*
     ;
 
-// Ignore whitespace
+// Skip white and blank spaces
 WS
     : [ \t\r\n]+ -> skip
     ;
