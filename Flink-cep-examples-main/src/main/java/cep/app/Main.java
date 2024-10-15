@@ -32,7 +32,7 @@ public class Main {
                 new Event("B", 8, 4000L),
                 new Event("C", 12, 6000L),
                 new Event("D", 9, 12000L),
-                new Event("E", 3, 16000L)
+                new Event("E", 12, 16000L)
         );
 
         DataStream<Event> eventStream = env.fromCollection(events);

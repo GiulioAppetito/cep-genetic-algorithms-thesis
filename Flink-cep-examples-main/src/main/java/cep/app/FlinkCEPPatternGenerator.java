@@ -24,7 +24,7 @@ public class FlinkCEPPatternGenerator {
         FlinkCEPPatternVisitor visitor = new FlinkCEPPatternVisitor();
         Pattern<Event, ?> pattern = (Pattern<Event, ?>) visitor.visit(context);
 
-        System.out.println("Pattern generato con successo: " + pattern+"\n\n*******************************************************************\n");
+        System.out.println("Pattern generato con successo: " + pattern + "\n\n*******************************************************************\n");
         return pattern;
     }
 }
