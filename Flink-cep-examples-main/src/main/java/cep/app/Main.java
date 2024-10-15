@@ -12,6 +12,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -22,13 +23,16 @@ public class Main {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setRuntimeMode(RuntimeExecutionMode.BATCH);
 
+        // Pattern string from the grammar
+        String patternString = "start where value==9";
+
         // Example datastream (just for testing)
         List<Event> events = Arrays.asList(
-                new Event("A", 6, 1000L),    // Soddisfa la condizione "start where value > 5"
-                new Event("B", 8, 4000L),    // Soddisfa la condizione "middle where value < 10"
-                new Event("C", 12, 6000L),   // NON soddisfa la condizione (valore > 10), quindi ignora
-                new Event("D", 9, 12000L),   // NON soddisfa la condizione (value != 3)
-                new Event("E", 3, 16000L)    // Soddisfa la condizione "end where value == 3", ma troppo tardi (dopo 15s)
+                new Event("A", 9, 1000L),
+                new Event("B", 8, 4000L),
+                new Event("C", 12, 6000L),
+                new Event("D", 9, 12000L),
+                new Event("E", 3, 16000L)
         );
 
         DataStream<Event> eventStream = env.fromCollection(events);
@@ -39,9 +43,6 @@ public class Main {
                         .withTimestampAssigner((event, timestamp) -> event.getTimestamp())
         );
 
-        // Pattern string from the grammar
-        String patternString = "start where value==8";
-
         // The visitor generates the pattern starting from the string
         Pattern<Event, ?> pattern = FlinkCEPPatternGenerator.generatePattern(patternString);
 
@@ -49,25 +50,37 @@ public class Main {
         PatternStream<Event> patternStream = CEP.pattern(eventStream, pattern);
 
         // Extract results
-        DataStream<Tuple3<String, Integer, Long>> resultStream = patternStream.select(new PatternSelectFunction<Event, Tuple3<String, Integer, Long>>() {
+        DataStream<List<Tuple3<String, Integer, Long>>> resultStream = patternStream.select(new PatternSelectFunction<Event, List<Tuple3<String, Integer, Long>>>() {
             @Override
-            public Tuple3<String, Integer, Long> select(Map<String, List<Event>> pattern) {
-                // Restituisce solo il primo evento corrispondente
-                Event firstEvent = pattern.values().iterator().next().get(0);
-                return new Tuple3<>(firstEvent.getName(), firstEvent.getValue(), firstEvent.getTimestamp());
+            public List<Tuple3<String, Integer, Long>> select(Map<String, List<Event>> pattern) {
+                List<Tuple3<String, Integer, Long>> matchedEvents = new ArrayList<>();
+
+                // Iterate over each entry in the pattern to collect all matching events
+                for (Map.Entry<String, List<Event>> entry : pattern.entrySet()) {
+                    List<Event> events = entry.getValue();
+
+                    for (Event event : events) {
+                        matchedEvents.add(new Tuple3<>(event.getName(), event.getValue(), event.getTimestamp()));
+                    }
+                }
+
+                return matchedEvents;
             }
         });
 
         // Sink to print the results
-        resultStream.addSink(new SinkFunction<Tuple3<String, Integer, Long>>() {
+        resultStream.addSink(new SinkFunction<List<Tuple3<String, Integer, Long>>>() {
             @Override
-            public void invoke(Tuple3<String, Integer, Long> value, Context context) {
-                // Stampa solo i risultati dei match
-                System.out.println("Pattern match result: " + value);
+            public void invoke(List<Tuple3<String, Integer, Long>> value, Context context) {
+                // Print the entire sequence of matching events
+                System.out.println("Pattern match sequence:");
+                for (Tuple3<String, Integer, Long> event : value) {
+                    System.out.println(event);
+                }
             }
         });
 
-        // Avvio dell'esecuzione Flink
+        // Start Flink execution
         env.execute("Flink CEP Pattern Example");
     }
 }
