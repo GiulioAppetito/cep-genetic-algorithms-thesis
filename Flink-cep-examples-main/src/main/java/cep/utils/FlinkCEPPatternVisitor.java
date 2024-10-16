@@ -11,14 +11,13 @@ public class FlinkCEPPatternVisitor<T extends BaseEvent> extends FlinkCEPGrammar
 
     @Override
     public Object visitPattern(FlinkCEPGrammarParser.PatternContext ctx) {
-        System.out.println("Visiting pattern context...");
-
+        // Visit the event sequence and generate the pattern
         Pattern<T, T> pattern = (Pattern<T, T>) visitEventSequence(ctx.eventSequence());
 
+        // Apply the within clause if present
         if (ctx.withinClause() != null) {
             Time duration = (Time) visitWithinClause(ctx.withinClause());
             pattern = pattern.within(duration);
-            System.out.println("Applied within clause: " + duration);
         }
 
         return pattern;
@@ -26,63 +25,77 @@ public class FlinkCEPPatternVisitor<T extends BaseEvent> extends FlinkCEPGrammar
 
     @Override
     public Object visitEventSequence(FlinkCEPGrammarParser.EventSequenceContext ctx) {
+        // Get the first event in the sequence
         FlinkCEPGrammarParser.EventContext firstEventContext = ctx.event(0);
         String firstEventName = firstEventContext.IDENTIFIER().getText();
         Pattern<T, T> pattern = Pattern.begin(firstEventName);
 
+        // Apply the condition to the first event if present
         if (firstEventContext.condition() != null) {
             pattern = applyCondition(pattern, firstEventContext.condition());
         }
 
+        // Apply the quantifier to the first event if present
         if (firstEventContext.quantifier() != null) {
             pattern = applyQuantifier(pattern, firstEventContext.quantifier());
         }
 
+        // Handle subsequent events in the sequence
         for (int i = 1; i < ctx.event().size(); i++) {
             String op = ctx.binaryOp(i - 1).getText();
             FlinkCEPGrammarParser.EventContext nextEventContext = ctx.event(i);
             String nextEventName = nextEventContext.IDENTIFIER().getText();
 
-            Pattern<T, T> nextEventPattern = pattern;
-
-            if (nextEventContext.condition() != null) {
-                nextEventPattern = applyCondition(nextEventPattern, nextEventContext.condition());
-            }
-
-            if (nextEventContext.quantifier() != null) {
-                nextEventPattern = applyQuantifier(nextEventPattern, nextEventContext.quantifier());
-            }
-
+            // Apply the binary operator (next, followedBy, etc.)
+            Pattern<T, T> nextEventPattern;
             switch (op) {
                 case "next":
-                    pattern = pattern.next(nextEventName);
+                    nextEventPattern = pattern.next(nextEventName);
                     break;
                 case "followedBy":
-                    pattern = pattern.followedBy(nextEventName);
+                    nextEventPattern = pattern.followedBy(nextEventName);
                     break;
                 case "followedByAny":
-                    pattern = pattern.followedByAny(nextEventName);
+                    nextEventPattern = pattern.followedByAny(nextEventName);
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported binary operation: " + op);
             }
+
+            // Apply condition to the next event if present
+            if (nextEventContext.condition() != null) {
+                nextEventPattern = applyCondition(nextEventPattern, nextEventContext.condition());
+            }
+
+            // Apply quantifier to the next event if present
+            if (nextEventContext.quantifier() != null) {
+                nextEventPattern = applyQuantifier(nextEventPattern, nextEventContext.quantifier());
+            }
+
+            // Assign the updated pattern
+            pattern = nextEventPattern;
         }
 
         return pattern;
     }
 
+
     private Pattern<T, T> applyCondition(Pattern<T, T> pattern, FlinkCEPGrammarParser.ConditionContext ctx) {
+        // Build the complex condition and apply it to the pattern
         SimpleCondition<T> condition = buildComplexCondition(ctx.conditionExpression());
         return pattern.where(condition);
     }
 
     private SimpleCondition<T> buildComplexCondition(FlinkCEPGrammarParser.ConditionExpressionContext ctx) {
+        // Build the base condition
         SimpleCondition<T> baseCondition = buildConditionAtom(ctx.conditionAtom());
 
+        // If there is a condition operator (AND/OR) and another condition expression
         if (ctx.conditionOp() != null && ctx.conditionExpression() != null) {
             SimpleCondition<T> nextCondition = buildComplexCondition(ctx.conditionExpression());
             String conditionOp = ctx.conditionOp().getText();
 
+            // Combine conditions based on the operator (AND/OR)
             if (conditionOp.equals("AND")) {
                 return new ConditionAnd<>(baseCondition, nextCondition);
             } else if (conditionOp.equals("OR")) {
@@ -98,6 +111,7 @@ public class FlinkCEPPatternVisitor<T extends BaseEvent> extends FlinkCEPGrammar
         String conditionValue = ctx.value().getText();
         String relationalOp = ctx.relationalOp().getText();
 
+        // Build the atomic condition based on the variable, value, and operator
         return new ConditionAtom<>(conditionVar, conditionValue, relationalOp);
     }
 
@@ -114,8 +128,10 @@ public class FlinkCEPPatternVisitor<T extends BaseEvent> extends FlinkCEPGrammar
 
         @Override
         public boolean filter(T event) {
+            // Get the field value from the event based on the condition variable
             Object fieldValue = event.getFieldValue(conditionVar);
 
+            // Apply the relational operator based on the type of the field value
             if (fieldValue instanceof Integer) {
                 return compareInteger((Integer) fieldValue, Integer.parseInt(conditionValue), relationalOp);
             } else if (fieldValue instanceof Float) {
@@ -170,6 +186,7 @@ public class FlinkCEPPatternVisitor<T extends BaseEvent> extends FlinkCEPGrammar
         }
     }
 
+    // ConditionAnd class, evaluates to true if both conditions are true
     static class ConditionAnd<T extends BaseEvent> extends SimpleCondition<T> {
         private final SimpleCondition<T> left;
         private final SimpleCondition<T> right;
@@ -185,6 +202,7 @@ public class FlinkCEPPatternVisitor<T extends BaseEvent> extends FlinkCEPGrammar
         }
     }
 
+    // ConditionOr class, evaluates to true if at least one condition is true
     static class ConditionOr<T extends BaseEvent> extends SimpleCondition<T> {
         private final SimpleCondition<T> left;
         private final SimpleCondition<T> right;
@@ -200,6 +218,7 @@ public class FlinkCEPPatternVisitor<T extends BaseEvent> extends FlinkCEPGrammar
         }
     }
 
+    // Apply quantifiers (times, oneOrMore, optional) to the pattern
     private Pattern<T, T> applyQuantifier(Pattern<T, T> pattern, FlinkCEPGrammarParser.QuantifierContext ctx) {
         if (ctx.INT() != null) {
             int times = Integer.parseInt(ctx.INT().getText());
@@ -214,6 +233,7 @@ public class FlinkCEPPatternVisitor<T extends BaseEvent> extends FlinkCEPGrammar
 
     @Override
     public Object visitWithinClause(FlinkCEPGrammarParser.WithinClauseContext ctx) {
+        // Parse the within clause to apply a time window
         String durationStr = ctx.DURATION().getText();
         int duration = Integer.parseInt(durationStr.substring(0, durationStr.length() - 1));
         char unit = durationStr.charAt(durationStr.length() - 1);

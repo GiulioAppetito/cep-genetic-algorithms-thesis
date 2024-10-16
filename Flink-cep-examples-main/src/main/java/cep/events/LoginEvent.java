@@ -1,32 +1,32 @@
 package cep.events;
 
-public class LoginEvent {
+public class LoginEvent implements BaseEvent {
     private long timestamp;
     private String ipAddress;
     private boolean successful;
-    private String eventId; // Nuovo campo per identificare univocamente l'evento
+    private String eventId;
 
     public LoginEvent(long timestamp, String ipAddress, boolean successful, String eventId) {
         this.timestamp = timestamp;
         this.ipAddress = ipAddress;
         this.successful = successful;
-        this.eventId = eventId; // Inizializza il nuovo campo
+        this.eventId = eventId;
     }
 
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public String getIpAddress() {
-        return ipAddress;
-    }
-
-    public boolean isSuccessful() {
-        return successful;
-    }
-
-    public String getEventId() {
-        return eventId;
+    @Override
+    public Object getFieldValue(String fieldName) {
+        switch (fieldName) {
+            case "timestamp":
+                return timestamp;
+            case "ipAddress":
+                return ipAddress;
+            case "successful":
+                return successful;
+            case "eventId":
+                return eventId;
+            default:
+                throw new IllegalArgumentException("Field not found: " + fieldName);
+        }
     }
 
     @Override

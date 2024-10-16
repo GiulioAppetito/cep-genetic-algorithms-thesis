@@ -11,14 +11,14 @@ public class FailThenSuccessPattern {
                 .where(new SimpleCondition<LoginEvent>() {
                     @Override
                     public boolean filter(LoginEvent event) {
-                        return !event.isSuccessful(); // Failed login
+                        return !event.getFieldValue("successful").equals("true"); // Failed login
                     }
                 })
                 .next("success")
                 .where(new SimpleCondition<LoginEvent>() {
                     @Override
                     public boolean filter(LoginEvent event) {
-                        return event.isSuccessful(); // Successful login after failure
+                        return event.getFieldValue("successful").equals("true"); // Successful login after failure
                     }
                 });
     }

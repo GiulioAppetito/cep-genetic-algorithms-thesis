@@ -12,14 +12,14 @@ public class FailThenSuccessWithinTimePattern {
                 .where(new SimpleCondition<LoginEvent>() {
                     @Override
                     public boolean filter(LoginEvent event) {
-                        return !event.isSuccessful(); // Detect a failed login
+                        return !event.getFieldValue("successful").equals("true"); // Detect a failed login
                     }
                 })
                 .next("success")
                 .where(new SimpleCondition<LoginEvent>() {
                     @Override
                     public boolean filter(LoginEvent event) {
-                        return event.isSuccessful(); // Detect a successful login
+                        return event.getFieldValue("successful").equals("true"); // Detect a successful login
                     }
                 })
                 .within(Time.seconds(60*10));

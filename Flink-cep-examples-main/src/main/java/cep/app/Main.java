@@ -21,45 +21,46 @@ import java.util.Map;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        // Creazione dell'ambiente Flink
+        // Create the Flink environment
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setRuntimeMode(RuntimeExecutionMode.BATCH);
 
         // Pattern string from the grammar
-        String patternString = "begin event1 where value == 5";
+        String patternString = "begin event1 where value > 8 followedBy event2 where value == 5 followedBy event3 where value == 10\n";
 
         // Example datastream (just for testing)
         List<BaseEvent> events = Arrays.asList(
                 new ExampleEvent("A", 10, 1000L),
                 new ExampleEvent("B", 5, 5000L),
                 new ExampleEvent("C", 10, 7000L),
-                new ExampleEvent("D", 5, 8000L),
-                new ExampleEvent("E", 5, 12000L)
+                new ExampleEvent("D", 14, 8000L),
+                new ExampleEvent("E", 5, 12000L),
+                new ExampleEvent("F", 8, 13000L),
+                new ExampleEvent("G",7,18000L)
         );
 
-        // DataStream con tipo BaseEvent
+        // DataStream with BaseEvent type
         DataStream<BaseEvent> eventStream = env.fromCollection(events);
 
-        // Strategia di timestamp e watermark
+        // Timestamp and watermark strategy
         eventStream = eventStream.assignTimestampsAndWatermarks(
                 WatermarkStrategy.<BaseEvent>forMonotonousTimestamps()
                         .withTimestampAssigner((event, timestamp) -> (Long) event.getFieldValue("timestamp"))
-
         );
 
-        // Generazione del pattern dalla stringa
+        // Generate the pattern from the string
         Pattern<BaseEvent, ?> pattern = FlinkCEPPatternGenerator.generatePattern(patternString);
 
-        // Applicazione del pattern al datastream
+        // Apply the pattern to the datastream
         PatternStream<BaseEvent> patternStream = CEP.pattern(eventStream, pattern);
 
-        // Estrazione dei risultati
+        // Extract the results
         DataStream<List<Tuple3<String, Integer, Long>>> resultStream = patternStream.select(new PatternSelectFunction<BaseEvent, List<Tuple3<String, Integer, Long>>>() {
             @Override
             public List<Tuple3<String, Integer, Long>> select(Map<String, List<BaseEvent>> pattern) {
                 List<Tuple3<String, Integer, Long>> matchedEvents = new ArrayList<>();
 
-                // Iterazione su ogni entry nel pattern per raccogliere tutti gli eventi corrispondenti
+                // Iterate over each entry in the pattern to collect all matching events
                 for (Map.Entry<String, List<BaseEvent>> entry : pattern.entrySet()) {
                     List<BaseEvent> events = entry.getValue();
 
@@ -76,11 +77,11 @@ public class Main {
             }
         });
 
-        // Sink per stampare i risultati
+        // Sink to print the results
         resultStream.addSink(new SinkFunction<List<Tuple3<String, Integer, Long>>>() {
             @Override
             public void invoke(List<Tuple3<String, Integer, Long>> value, Context context) {
-                // Stampa la sequenza completa degli eventi corrispondenti
+                // Print the complete sequence of matching events
                 System.out.println("Pattern match sequence:");
                 for (Tuple3<String, Integer, Long> event : value) {
                     System.out.println(event);
@@ -88,7 +89,7 @@ public class Main {
             }
         });
 
-        // Avvio dell'esecuzione di Flink
+        // Start Flink execution
         env.execute("Flink CEP Pattern Example");
     }
 }
