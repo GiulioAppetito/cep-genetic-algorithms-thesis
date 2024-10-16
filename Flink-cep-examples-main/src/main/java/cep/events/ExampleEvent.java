@@ -1,18 +1,16 @@
 package cep.events;
 
-public class Event {
+public class ExampleEvent implements BaseEvent {
     private String name;
-    private int value;  // Cambia il tipo se necessario
+    private int value;
     private long timestamp;
 
-    // Costruttore
-    public Event(String name, int value, long timestamp) {
+    public ExampleEvent(String name, int value, long timestamp) {
         this.name = name;
         this.value = value;
         this.timestamp = timestamp;
     }
 
-    // Getter standard
     public String getName() {
         return name;
     }
@@ -25,15 +23,15 @@ public class Event {
         return timestamp;
     }
 
-    // Metodo per ottenere i campi in modo dinamico
+    @Override
     public Object getFieldValue(String fieldName) {
         switch (fieldName) {
             case "name":
-                return getName();
+                return name;
             case "value":
-                return getValue();
+                return value;
             case "timestamp":
-                return getTimestamp();
+                return timestamp;
             default:
                 throw new IllegalArgumentException("Field not found: " + fieldName);
         }

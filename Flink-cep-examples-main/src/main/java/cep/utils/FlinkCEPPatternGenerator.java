@@ -1,15 +1,15 @@
-package cep.app;
+package cep.utils;
 
 import antlr.FlinkCEPGrammarLexer;
 import antlr.FlinkCEPGrammarParser;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.apache.flink.cep.pattern.Pattern;
-import cep.events.Event;
+import cep.events.BaseEvent;
 
 public class FlinkCEPPatternGenerator {
 
-    public static Pattern<Event, ?> generatePattern(String patternString) {
+    public static <T extends BaseEvent> Pattern<T, ?> generatePattern(String patternString) {
         System.out.println("Parsing pattern string: " + patternString);
 
         // Lexer and parser generation
@@ -21,8 +21,8 @@ public class FlinkCEPPatternGenerator {
         FlinkCEPGrammarParser.PatternContext context = parser.pattern();
 
         // From context to Flink CEP Pattern through the visitor
-        FlinkCEPPatternVisitor visitor = new FlinkCEPPatternVisitor();
-        Pattern<Event, ?> pattern = (Pattern<Event, ?>) visitor.visit(context);
+        FlinkCEPPatternVisitor<T> visitor = new FlinkCEPPatternVisitor<>();
+        Pattern<T, ?> pattern = (Pattern<T, ?>) visitor.visit(context);
 
         System.out.println("Pattern generato con successo: " + pattern + "\n\n*******************************************************************\n");
         return pattern;
