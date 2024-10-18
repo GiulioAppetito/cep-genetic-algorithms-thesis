@@ -49,7 +49,7 @@ public class Main {
         String testPatternString = "begin event1 where value == 10 next event2 where value == 14 followedBy event3 where value == 7";
 
         // Evaluate the fitness of the pattern using the full event stream and the static target sequences
-        double accuracy = evaluator.evaluateFitnessOnFullStream(testPatternString, eventStream, targetSequences);
+        double accuracy = evaluator.evaluateFitness(testPatternString, eventStream, targetSequences);
 
         // Print the accuracy
         System.out.println("Pattern accuracy: " + accuracy);

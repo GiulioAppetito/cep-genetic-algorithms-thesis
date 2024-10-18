@@ -43,7 +43,7 @@ class PatternFitnessEvaluatorTest {
         String testPatternString = "begin event1 where value == 10 next event2 where value == 14 followedBy event3 where value == 7";
 
         // Evaluate fitness
-        double accuracy = evaluator.evaluateFitnessOnFullStream(testPatternString, eventStream, targetSequences);
+        double accuracy = evaluator.evaluateFitness(testPatternString, eventStream, targetSequences);
 
         // Assert the accuracy is 100%
         assertEquals(1.0, accuracy, "The pattern should match exactly with 100% accuracy.");
@@ -77,7 +77,7 @@ class PatternFitnessEvaluatorTest {
         String testPatternString = "begin event1 where value == 10 next event2 where value == 14 followedBy event3 where value == 7";
 
         // Evaluate fitness
-        double accuracy = evaluator.evaluateFitnessOnFullStream(testPatternString, eventStream, targetSequences);
+        double accuracy = evaluator.evaluateFitness(testPatternString, eventStream, targetSequences);
 
         // Assert that accuracy is 0 because no sequence matches
         assertEquals(0.0, accuracy, "The pattern should not match any sequence, accuracy should be 0.");
@@ -117,7 +117,7 @@ class PatternFitnessEvaluatorTest {
         String testPatternString = "begin event1 where value == 10 followedBy event2 where value == 7";
 
         // Evaluate fitness
-        double accuracy = evaluator.evaluateFitnessOnFullStream(testPatternString, eventStream, targetSequences);
+        double accuracy = evaluator.evaluateFitness(testPatternString, eventStream, targetSequences);
 
         // Assert the accuracy is 100%
         assertEquals(1.0, accuracy, "The pattern should match exactly with 100% accuracy.");

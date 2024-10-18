@@ -22,7 +22,7 @@ public class PatternFitnessEvaluator {
         this.env = StreamExecutionEnvironment.getExecutionEnvironment();
     }
 
-    public double evaluateFitnessOnFullStream(String patternString, DataStream<BaseEvent> eventStream, List<List<BaseEvent>> targetSequences) throws Exception {
+    public double evaluateFitness(String patternString, DataStream<BaseEvent> eventStream, List<List<BaseEvent>> targetSequences) throws Exception {
         int totalTargetSequences = targetSequences.size();
         int matchedSequences = 0;
 
