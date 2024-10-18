@@ -11,18 +11,6 @@ public class ExampleEvent implements BaseEvent {
         this.timestamp = timestamp;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public int getValue() {
-        return value;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
     @Override
     public Object getFieldValue(String fieldName) {
         switch (fieldName) {
