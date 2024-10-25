@@ -7,12 +7,14 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import cep.events.BaseEvent;
 
+
 public class FlinkCEPPatternVisitor<T extends BaseEvent> extends FlinkCEPGrammarBaseVisitor<Object> {
 
     @Override
     public Object visitPattern(FlinkCEPGrammarParser.PatternContext ctx) {
         // Visit the event sequence and generate the pattern
         Pattern<T, T> pattern = (Pattern<T, T>) visitEventSequence(ctx.eventSequence());
+
 
         // Apply the within clause if present
         if (ctx.withinClause() != null) {

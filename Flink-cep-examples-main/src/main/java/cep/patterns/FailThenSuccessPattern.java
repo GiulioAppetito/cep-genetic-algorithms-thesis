@@ -7,7 +7,7 @@ import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 public class FailThenSuccessPattern {
 
     public static Pattern<LoginEvent, ?> getPattern() {
-        return Pattern.<LoginEvent>begin("fail")
+        return Pattern.<LoginEvent>begin("success")
                 .where(new SimpleCondition<LoginEvent>() {
                     @Override
                     public boolean filter(LoginEvent event) {

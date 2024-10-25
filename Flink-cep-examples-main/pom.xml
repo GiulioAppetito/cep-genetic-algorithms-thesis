@@ -14,37 +14,82 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<flink.version>1.19.0</flink.version> <!-- Allinea la versione di Flink -->
-		<scala.binary.version>2.12</scala.binary.version> <!-- Usa Scala 2.12 per Flink 1.19.0 -->
-		<java.version>1.8</java.version> <!-- Usa Java 8 -->
+		<flink.version>1.19.0</flink.version> <!-- Versione di Flink -->
+		<scala.binary.version>2.12</scala.binary.version> <!-- Scala per Flink 1.19.0 -->
+		<java.version>1.8</java.version> <!-- Java 8 per compatibilità -->
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
+		<jgea.version>2.7.0</jgea.version> <!-- Versione JGEA -->
 	</properties>
 
-
-
 	<dependencies>
-		<!-- Flink Core -->
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-core</artifactId>
-			<version>${flink.version}</version>
-		</dependency>
-
-		<!-- Flink Streaming API -->
+		<!-- Dipendenze di Flink -->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-streaming-java</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
 
-		<!-- Flink CEP -->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-cep</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-clients</artifactId>
+			<version>${flink.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-connector-files</artifactId>
+			<version>${flink.version}</version>
+		</dependency>
+
+		<!-- JGEA Framework -->
+		<dependency>
+			<groupId>io.github.ericmedvet</groupId>
+			<artifactId>jgea.core</artifactId>
+			<version>${jgea.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.github.ericmedvet</groupId>
+			<artifactId>jgea.problem</artifactId>
+			<version>${jgea.version}</version>
+		</dependency>
+
+		<!-- ANTLR 4 per parsing della grammatica -->
+		<dependency>
+			<groupId>org.antlr</groupId>
+			<artifactId>antlr4</artifactId>
+			<version>4.13.2</version>
+		</dependency>
+
+		<!-- Kryo Serialization -->
+		<dependency>
+			<groupId>com.esotericsoftware</groupId>
+			<artifactId>kryo</artifactId>
+			<version>5.6.0</version>
+		</dependency>
+
+		<!-- Log4j per logging -->
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.17</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>1.7.30</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- JUnit per i test -->
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-api</artifactId>
@@ -58,54 +103,34 @@
 			<scope>test</scope>
 		</dependency>
 
-
-		<!-- Flink Clients per esecuzione locale -->
 		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-clients</artifactId>
-			<version>${flink.version}</version> <!-- Allineato con flink.version -->
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.github.ericmedvet</groupId>
+			<artifactId>jgea</artifactId>
+			<version>2.6.1</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.ericmedvet</groupId>
+			<artifactId>jgea</artifactId>
+			<version>2.4.9</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.ericmedvet</groupId>
+			<artifactId>jgea.core</artifactId>
+			<version>2.6.1</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.ericmedvet</groupId>
+			<artifactId>jgea.problem</artifactId>
+			<version>2.6.1</version>
 		</dependency>
 
-		<!-- Flink File Connector -->
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-connector-files</artifactId>
-			<version>${flink.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.esotericsoftware</groupId>
-			<artifactId>kryo</artifactId>
-			<version>5.6.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.antlr</groupId>
-			<artifactId>antlr4</artifactId>
-			<version>4.13.2</version>
-		</dependency>
-
-		<!-- Log4j for logging -->
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.17</version>
-		</dependency>
-
-		<!-- SLF4J for Log4j integration -->
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.7.30</version>
-			<scope>runtime</scope>
-		</dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+	</dependencies>
 
 	<build>
 		<plugins>
@@ -115,15 +140,16 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version>
 				<configuration>
-					<source>${java.version}</source>
-					<target>${java.version}</target>
+					<source>16</source>
+					<target>16</target>
 				</configuration>
 			</plugin>
 
+			<!-- ANTLR Plugin -->
 			<plugin>
 				<groupId>org.antlr</groupId>
 				<artifactId>antlr4-maven-plugin</artifactId>
-				<version>4.13.2</version>  <!-- Verifica la versione di ANTLR che stai usando -->
+				<version>4.13.2</version>
 				<executions>
 					<execution>
 						<goals>
@@ -132,23 +158,12 @@
 						<configuration>
 							<sourceDirectory>${project.basedir}/src/main/antlr4</sourceDirectory>
 							<outputDirectory>${project.build.directory}/generated-sources/antlr4</outputDirectory>
-							<packageName>com.example.antlr</packageName>  <!-- Imposta il package per i file generati -->
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.22.2</version>
-				<configuration>
-					<argLine>--add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</argLine>
-				</configuration>
-			</plugin>
-
-
-			<!-- Maven Shade Plugin per creare un jar contenente tutte le dipendenze -->
+			<!-- Maven Shade Plugin per creare un JAR contenente tutte le dipendenze -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
@@ -185,15 +200,6 @@
 				</executions>
 			</plugin>
 
-			<!-- Maven Surefire Plugin per passare le opzioni JVM -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.22.2</version>
-				<configuration>
-					<argLine>--add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</argLine>
-				</configuration>
-			</plugin>
 		</plugins>
 	</build>
 
