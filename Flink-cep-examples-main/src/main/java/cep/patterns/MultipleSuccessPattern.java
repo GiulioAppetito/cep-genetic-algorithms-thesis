@@ -11,7 +11,7 @@ public class MultipleSuccessPattern {
                 .where(new SimpleCondition<LoginEvent>() {
                     @Override
                     public boolean filter(LoginEvent event) {
-                        return event.getFieldValue("successful").equals("true"); // Only successful logins
+                        return event.getField("successful").equals("true"); // Only successful logins
                     }
                 })
                 .timesOrMore(3); // At least 3 successful login

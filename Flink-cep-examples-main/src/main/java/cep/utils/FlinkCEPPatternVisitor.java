@@ -131,7 +131,7 @@ public class FlinkCEPPatternVisitor<T extends BaseEvent> extends FlinkCEPGrammar
         @Override
         public boolean filter(T event) {
             // Get the field value from the event based on the condition variable
-            Object fieldValue = event.getFieldValue(conditionVar);
+            Object fieldValue = event.getField(conditionVar);
 
             // Apply the relational operator based on the type of the field value
             if (fieldValue instanceof Integer) {

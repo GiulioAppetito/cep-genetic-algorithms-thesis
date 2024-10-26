@@ -12,16 +12,7 @@ public class ExampleEvent implements BaseEvent {
     }
 
     @Override
-    public Object getFieldValue(String fieldName) {
-        switch (fieldName) {
-            case "name":
-                return name;
-            case "value":
-                return value;
-            case "timestamp":
-                return timestamp;
-            default:
-                throw new IllegalArgumentException("Field not found: " + fieldName);
-        }
+    public Object getField(String fieldName) {
+        return null;
     }
 }

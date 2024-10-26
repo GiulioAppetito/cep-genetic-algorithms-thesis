@@ -14,54 +14,48 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<flink.version>1.19.0</flink.version> <!-- Versione di Flink -->
-		<scala.binary.version>2.12</scala.binary.version> <!-- Scala per Flink 1.19.0 -->
-		<java.version>1.8</java.version> <!-- Java 8 per compatibilità -->
-		<maven.compiler.source>${java.version}</maven.compiler.source>
-		<maven.compiler.target>${java.version}</maven.compiler.target>
-		<jgea.version>2.7.0</jgea.version> <!-- Versione JGEA -->
+		<flink.version>1.19.0</flink.version>
+		<scala.binary.version>2.12</scala.binary.version>
+		<java.version>17</java.version>
+		<jgea.version>2.7.0</jgea.version>
 	</properties>
 
 	<dependencies>
-		<!-- Dipendenze di Flink -->
+		<!-- Flink Dependencies -->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-streaming-java</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-cep</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-clients</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-connector-files</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
 
-		<!-- JGEA Framework -->
+		<!-- JGEA Core and Problem Modules -->
 		<dependency>
 			<groupId>io.github.ericmedvet</groupId>
 			<artifactId>jgea.core</artifactId>
 			<version>${jgea.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>io.github.ericmedvet</groupId>
 			<artifactId>jgea.problem</artifactId>
 			<version>${jgea.version}</version>
 		</dependency>
 
-		<!-- ANTLR 4 per parsing della grammatica -->
+		<!-- ANTLR for grammar parsing -->
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4</artifactId>
@@ -75,13 +69,12 @@
 			<version>5.6.0</version>
 		</dependency>
 
-		<!-- Log4j per logging -->
+		<!-- Logging -->
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
 			<version>1.2.17</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
@@ -89,7 +82,7 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- JUnit per i test -->
+		<!-- JUnit for Testing -->
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-api</artifactId>
@@ -102,34 +95,6 @@
 			<version>5.7.0</version>
 			<scope>test</scope>
 		</dependency>
-
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.12</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.github.ericmedvet</groupId>
-			<artifactId>jgea</artifactId>
-			<version>2.6.1</version>
-		</dependency>
-		<dependency>
-			<groupId>io.github.ericmedvet</groupId>
-			<artifactId>jgea</artifactId>
-			<version>2.4.9</version>
-		</dependency>
-		<dependency>
-			<groupId>io.github.ericmedvet</groupId>
-			<artifactId>jgea.core</artifactId>
-			<version>2.6.1</version>
-		</dependency>
-		<dependency>
-			<groupId>io.github.ericmedvet</groupId>
-			<artifactId>jgea.problem</artifactId>
-			<version>2.6.1</version>
-		</dependency>
-
 	</dependencies>
 
 	<build>
@@ -140,8 +105,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version>
 				<configuration>
-					<source>16</source>
-					<target>16</target>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
 				</configuration>
 			</plugin>
 
@@ -163,7 +128,7 @@
 				</executions>
 			</plugin>
 
-			<!-- Maven Shade Plugin per creare un JAR contenente tutte le dipendenze -->
+			<!-- Maven Shade Plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
@@ -192,14 +157,13 @@
 							</filters>
 							<transformers>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>flinkCEP.cases.CEPExample</mainClass>
+									<mainClass>app.Main</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
-
 		</plugins>
 	</build>
 

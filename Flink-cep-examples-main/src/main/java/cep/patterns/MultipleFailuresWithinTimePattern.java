@@ -15,7 +15,7 @@ public class MultipleFailuresWithinTimePattern {
                 .where(new SimpleCondition<LoginEvent>() {
                     @Override
                     public boolean filter(LoginEvent event) {
-                        return !event.getFieldValue("successful").equals("true"); // Only failed logins
+                        return !event.getField("successful").equals("true"); // Only failed logins
                     }
                 })
                 .timesOrMore(numFailures) // At least numFailures failures

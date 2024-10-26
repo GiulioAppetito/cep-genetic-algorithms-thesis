@@ -11,7 +11,7 @@ public class MultipleFailuresFollowedBySuccessPattern {
                 .where(new SimpleCondition<LoginEvent>() {
                     @Override
                     public boolean filter(LoginEvent event) {
-                        return !event.getFieldValue("successful").equals("true");
+                        return !event.getField("successful").equals("true");
                     }
                 })
                 .timesOrMore(5)
@@ -19,7 +19,7 @@ public class MultipleFailuresFollowedBySuccessPattern {
                 .where(new SimpleCondition<LoginEvent>() {
                     @Override
                     public boolean filter(LoginEvent event) {
-                        return event.getFieldValue("successful").equals("true");
+                        return event.getField("successful").equals("true");
                     }
                 });
     }

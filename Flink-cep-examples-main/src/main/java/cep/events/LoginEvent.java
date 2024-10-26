@@ -14,7 +14,7 @@ public class LoginEvent implements BaseEvent {
     }
 
     @Override
-    public Object getFieldValue(String fieldName) {
+    public Object getField(String fieldName) {
         switch (fieldName) {
             case "timestamp":
                 return timestamp;

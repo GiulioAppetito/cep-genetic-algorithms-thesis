@@ -32,7 +32,7 @@ public class PatternFitnessEvaluator {
         // Add watermark for timestamp management
         eventStream = eventStream.assignTimestampsAndWatermarks(
                 WatermarkStrategy.<BaseEvent>forMonotonousTimestamps()
-                        .withTimestampAssigner((event, timestamp) -> (Long) event.getFieldValue("timestamp"))
+                        .withTimestampAssigner((event, timestamp) -> (Long) event.getField("timestamp"))
         );
 
         // Apply the pattern to the full event stream
@@ -49,9 +49,9 @@ public class PatternFitnessEvaluator {
                     List<BaseEvent> events = entry.getValue();
                     for (BaseEvent event : events) {
                         matchedEvents.add(new Tuple3<>(
-                                (String) event.getFieldValue("name"),
-                                (Integer) event.getFieldValue("value"),
-                                (Long) event.getFieldValue("timestamp")
+                                (String) event.getField("name"),
+                                (Integer) event.getField("value"),
+                                (Long) event.getField("timestamp")
                         ));
                     }
                 }
@@ -79,9 +79,9 @@ public class PatternFitnessEvaluator {
         List<Tuple3<String, Integer, Long>> tupleSequence = new ArrayList<>();
         for (BaseEvent event : events) {
             tupleSequence.add(new Tuple3<>(
-                    (String) event.getFieldValue("name"),
-                    (Integer) event.getFieldValue("value"),
-                    (Long) event.getFieldValue("timestamp")
+                    (String) event.getField("name"),
+                    (Integer) event.getField("value"),
+                    (Long) event.getField("timestamp")
             ));
         }
         return tupleSequence;
