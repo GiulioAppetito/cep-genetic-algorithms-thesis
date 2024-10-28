@@ -19,14 +19,18 @@ public class Main {
             assert grammarStream != null;
             StringGrammar<String> grammar = StringGrammar.load(grammarStream);
 
+            // Tree generation parameters
+            int MAX_HEIGHT = 100;
+            int TARGET_DEPTH = 10;
+
             System.out.println("Loaded Grammar: ");
             System.out.println(grammar);
 
             // Initialize a tree factory with a maximum depth for random generation
-            GrowGrammarTreeFactory<String> treeFactory = new GrowGrammarTreeFactory<>(1000, grammar);
+            GrowGrammarTreeFactory<String> treeFactory = new GrowGrammarTreeFactory<>(MAX_HEIGHT, grammar);
 
             // Generate the random tree
-            Tree<String> randomTree = treeFactory.build(new Random(), 10);
+            Tree<String> randomTree = treeFactory.build(new Random(), TARGET_DEPTH);
 
             if (randomTree != null) {
                 System.out.println("Generated Random Tree:");
@@ -38,7 +42,7 @@ public class Main {
                 PatternRepresentation patternRepresentation = mapper.apply(randomTree); // Map the random tree to PatternRepresentation
 
                 // Output the resulting PatternRepresentation
-                System.out.println("\nMapped PatternRepresentation:");
+                System.out.println("\nMapped PatternRepresentation:\n");
                 System.out.println(patternRepresentation);
             } else {
                 System.out.println("Random Tree generation returned null.");

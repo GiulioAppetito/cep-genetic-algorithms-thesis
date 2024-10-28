@@ -9,6 +9,10 @@ import java.util.function.Function;
 
 public class PatternMapper implements Function<Tree<String>, PatternRepresentation> {
 
+    /**
+     * <pattern> ::= <events> <withinClause> | <events>
+     * Processes the root node to extract events and withinClause elements.
+     */
     @Override
     public PatternRepresentation apply(Tree<String> tree) {
         List<PatternRepresentation.Event> events = new ArrayList<>();
@@ -24,6 +28,10 @@ public class PatternMapper implements Function<Tree<String>, PatternRepresentati
         return new PatternRepresentation(events, withinClause);
     }
 
+    /**
+     * <events> ::= <event> | <event> <eConcat> <events>
+     * Recursively parses a list of events and manages concatenation between events.
+     */
     private List<PatternRepresentation.Event> parseEvents(Tree<String> eventsNode) {
         List<PatternRepresentation.Event> events = new ArrayList<>();
 
@@ -65,6 +73,10 @@ public class PatternMapper implements Function<Tree<String>, PatternRepresentati
     }
 
 
+    /**
+     * <event> ::= <identifier> <conditions> <quantifier>
+     * Parses a single event, including its identifier, conditions, and quantifier.
+     */
     private PatternRepresentation.Event parseSingleEvent(Tree<String> eventNode) {
         String identifier = null;
         List<PatternRepresentation.Condition> conditions = new ArrayList<>();
@@ -86,6 +98,10 @@ public class PatternMapper implements Function<Tree<String>, PatternRepresentati
         return new PatternRepresentation.Event(identifier, conditions, quantifier, null);
     }
 
+    /**
+     * <conditions> ::= <condition> | <condition> <cConcat> <conditions>
+     * Recursively parses a list of conditions and manages concatenation between them.
+     */
     private List<PatternRepresentation.Condition> parseConditions(Tree<String> conditionsNode) {
         List<PatternRepresentation.Condition> conditions = new ArrayList<>();
 
@@ -126,6 +142,10 @@ public class PatternMapper implements Function<Tree<String>, PatternRepresentati
         return conditions;
     }
 
+    /**
+     * <eConcat> ::= next | followedBy | followedByAny
+     * Parses concatenation types between events.
+     */
     private PatternRepresentation.Event.Concatenator parseConcatenator(Tree<String> concatNode) {
         String value = concatNode.visitLeaves().get(0);
         return switch (value) {
@@ -136,6 +156,10 @@ public class PatternMapper implements Function<Tree<String>, PatternRepresentati
         };
     }
 
+    /**
+     * <condition> ::= <var> <op> <fNum>
+     * Parses a single condition, including its variable, operator, and numeric value.
+     */
     private PatternRepresentation.Condition parseCondition(Tree<String> conditionNode) {
         String variable = null;
         PatternRepresentation.Condition.Operator operator = null;
@@ -157,6 +181,10 @@ public class PatternMapper implements Function<Tree<String>, PatternRepresentati
         return new PatternRepresentation.Condition(variable, operator, value, null);
     }
 
+    /**
+     * <cConcat> ::= and | or
+     * Parses logical concatenation operators between conditions.
+     */
     private PatternRepresentation.Condition.Concatenator parseConditionConcatenator(Tree<String> concatNode) {
         String value = concatNode.visitLeaves().get(0);
         return switch (value) {
@@ -166,6 +194,10 @@ public class PatternMapper implements Function<Tree<String>, PatternRepresentati
         };
     }
 
+    /**
+     * <op> ::= equal | notEqual | lt | gt
+     * Parses comparison operators within a condition.
+     */
     private PatternRepresentation.Condition.Operator parseOperator(Tree<String> opNode) {
         String value = opNode.visitLeaves().get(0);
         return switch (value) {
@@ -177,6 +209,10 @@ public class PatternMapper implements Function<Tree<String>, PatternRepresentati
         };
     }
 
+    /**
+     * <fNum> ::= + <digit> . <digit> <digit> E <digit> | - <digit> . <digit> <digit> E <digit> | + <digit> . <digit> <digit> E - <digit> | - <digit> . <digit> <digit> E - <digit>
+     * Parses a floating-point number format with scientific notation.
+     */
     private float parseFNum(Tree<String> fNumNode) {
         StringBuilder fNumStr = new StringBuilder();
 
@@ -190,6 +226,10 @@ public class PatternMapper implements Function<Tree<String>, PatternRepresentati
         return Float.parseFloat(fNumStr.toString());
     }
 
+    /**
+     * <quantifier> ::= oneOrMore | optional | <iNum>
+     * Parses the quantifier that defines event occurrence constraints.
+     */
     private PatternRepresentation.Quantifier parseQuantifier(Tree<String> quantifierNode) {
         Tree<String> quantNode = quantifierNode.child(0);
         return switch (quantNode.content()) {
@@ -202,6 +242,10 @@ public class PatternMapper implements Function<Tree<String>, PatternRepresentati
         };
     }
 
+    /**
+     * <withinClause> ::= <fNum>
+     * Parses the time constraint applied to the event sequence.
+     */
     private PatternRepresentation.WithinClause parseWithinClause(Tree<String> withinClauseNode) {
         float duration = parseFNum(withinClauseNode.child(0));
         return new PatternRepresentation.WithinClause(duration);
