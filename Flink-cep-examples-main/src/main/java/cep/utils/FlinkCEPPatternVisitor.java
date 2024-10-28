@@ -15,8 +15,7 @@ public class FlinkCEPPatternVisitor<T extends BaseEvent> extends FlinkCEPGrammar
         // Visit the event sequence and generate the pattern
         Pattern<T, T> pattern = (Pattern<T, T>) visitEventSequence(ctx.eventSequence());
 
-
-        // Apply the within clause if present
+        // Apply the within clause (if present)
         if (ctx.withinClause() != null) {
             Time duration = (Time) visitWithinClause(ctx.withinClause());
             pattern = pattern.within(duration);

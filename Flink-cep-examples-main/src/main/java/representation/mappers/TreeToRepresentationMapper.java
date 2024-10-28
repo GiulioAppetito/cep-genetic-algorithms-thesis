@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-public class PatternMapper implements Function<Tree<String>, PatternRepresentation> {
+public class TreeToRepresentationMapper implements Function<Tree<String>, PatternRepresentation> {
 
     /**
      * <pattern> ::= <events> <withinClause> | <events>
@@ -36,25 +36,25 @@ public class PatternMapper implements Function<Tree<String>, PatternRepresentati
         List<PatternRepresentation.Event> events = new ArrayList<>();
 
         if (eventsNode.nChildren() == 0) {
-            return events;  // Base case for empty node
+            return events;  // Base case for empty node.
         }
 
-        // Parse the first <event>
+        // Parse the first <event>.
         Tree<String> firstEventNode = eventsNode.child(0);
         PatternRepresentation.Event firstEvent = parseSingleEvent(firstEventNode);
         events.add(firstEvent);
 
-        // If there are more than one children, handle <eConcat> <events> recursively
+        // If there are more than one children, handle <eConcat> <events> recursively.
         if (eventsNode.nChildren() > 1) {
             Tree<String> concatNode = eventsNode.child(1);  // <eConcat>
             Tree<String> remainingEventsNode = eventsNode.child(2);  // <events>
 
             PatternRepresentation.Event.Concatenator concatenator = parseConcatenator(concatNode);
 
-            // Recursively parse remaining events
+            // Recursively parse remaining events.
             List<PatternRepresentation.Event> remainingEvents = parseEvents(remainingEventsNode);
 
-            // Attach concatenator to the first event in the remaining list
+            // Attach concatenator to the first event in the remaining list.
             if (!remainingEvents.isEmpty()) {
                 PatternRepresentation.Event firstRemainingEvent = remainingEvents.get(0);
                 remainingEvents.set(0, new PatternRepresentation.Event(

@@ -22,6 +22,11 @@ public class FailThenSuccessWithinTimePattern {
                         return event.getField("successful").equals("true"); // Detect a successful login
                     }
                 })
-                .within(Time.seconds(60*10));
+                .within(Time.seconds(60 * 10));
+    }
+
+    public static void main(String[] args) {
+        Pattern<LoginEvent, ?> pattern = getPattern();
+        System.out.println("Generated Pattern: " + pattern);
     }
 }
