@@ -1,7 +1,7 @@
 package representation.mappers;
 
-import io.github.ericmedvet.jgea.core.representation.tree.Tree;
 import representation.PatternRepresentation;
+import io.github.ericmedvet.jgea.core.representation.tree.Tree;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,93 +11,138 @@ public class PatternMapper implements Function<Tree<String>, PatternRepresentati
 
     @Override
     public PatternRepresentation apply(Tree<String> tree) {
-        List<PatternRepresentation.SingleEvent> events = new ArrayList<>();
+        List<PatternRepresentation.Event> events = new ArrayList<>();
         PatternRepresentation.WithinClause withinClause = null;
 
-        // Process main nodes: "<events>" and "<withinClause>"
         for (Tree<String> child : tree) {
-            switch (child.content()) {
-                case "<events>":
-                    events = parseEvents(child);
-                    break;
-                case "<withinClause>":
-                    withinClause = parseWithinClause(child);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unexpected node: " + child.content());
+            if ("<events>".equals(child.content())) {
+                events = parseEvents(child); // Parse all events recursively
+            } else if ("<withinClause>".equals(child.content())) {
+                withinClause = parseWithinClause(child); // Parse within clause
             }
         }
         return new PatternRepresentation(events, withinClause);
     }
 
-    private List<PatternRepresentation.SingleEvent> parseEvents(Tree<String> eventsNode) {
-        List<PatternRepresentation.SingleEvent> events = new ArrayList<>();
+    private List<PatternRepresentation.Event> parseEvents(Tree<String> eventsNode) {
+        List<PatternRepresentation.Event> events = new ArrayList<>();
 
-        for (Tree<String> eventNode : eventsNode) {
-            if ("<event>".equals(eventNode.content())) {
-                events.add(parseSingleEvent(eventNode));
-            }
+        if (eventsNode.nChildren() == 0) {
+            return events;  // Base case for empty node
         }
+
+        // Parse the first <event>
+        Tree<String> firstEventNode = eventsNode.child(0);
+        PatternRepresentation.Event firstEvent = parseSingleEvent(firstEventNode);
+        events.add(firstEvent);
+
+        // If there are more than one children, handle <eConcat> <events> recursively
+        if (eventsNode.nChildren() > 1) {
+            Tree<String> concatNode = eventsNode.child(1);  // <eConcat>
+            Tree<String> remainingEventsNode = eventsNode.child(2);  // <events>
+
+            PatternRepresentation.Event.Concatenator concatenator = parseConcatenator(concatNode);
+
+            // Recursively parse remaining events
+            List<PatternRepresentation.Event> remainingEvents = parseEvents(remainingEventsNode);
+
+            // Attach concatenator to the first event in the remaining list
+            if (!remainingEvents.isEmpty()) {
+                PatternRepresentation.Event firstRemainingEvent = remainingEvents.get(0);
+                remainingEvents.set(0, new PatternRepresentation.Event(
+                        firstRemainingEvent.identifier(),
+                        firstRemainingEvent.conditions(),
+                        firstRemainingEvent.quantifier(),
+                        concatenator
+                ));
+            }
+
+            // Add remaining events to the main events list
+            events.addAll(remainingEvents);
+        }
+
         return events;
     }
 
-    private PatternRepresentation.SingleEvent parseSingleEvent(Tree<String> eventNode) {
-        PatternRepresentation.SingleEvent.Concatenator concatenator = null;
+
+    private PatternRepresentation.Event parseSingleEvent(Tree<String> eventNode) {
         String identifier = null;
         List<PatternRepresentation.Condition> conditions = new ArrayList<>();
         PatternRepresentation.Quantifier quantifier = null;
 
         for (Tree<String> child : eventNode) {
             switch (child.content()) {
-                case "<eConcat>":
-                    concatenator = parseConcatenator(child);
-                    break;
                 case "<identifier>":
-                    identifier = child.visitLeaves().get(0);
+                    identifier = child.visitLeaves().get(0);  // Get identifier for the event
                     break;
                 case "<conditions>":
-                    conditions = parseConditions(child);
+                    conditions = parseConditions(child);  // Parse all conditions within the event
                     break;
                 case "<quantifier>":
-                    quantifier = parseQuantifier(child);
+                    quantifier = parseQuantifier(child);  // Parse the quantifier if available
                     break;
             }
         }
-        return new PatternRepresentation.SingleEvent(concatenator, identifier, conditions, quantifier);
-    }
-
-    private PatternRepresentation.SingleEvent.Concatenator parseConcatenator(Tree<String> concatNode) {
-        String value = concatNode.visitLeaves().get(0);
-        return switch (value) {
-            case "next" -> PatternRepresentation.SingleEvent.Concatenator.NEXT;
-            case "followedBy" -> PatternRepresentation.SingleEvent.Concatenator.FOLLOWED_BY;
-            case "followedByAny" -> PatternRepresentation.SingleEvent.Concatenator.FOLLOWED_BY_ANY;
-            default -> throw new IllegalArgumentException("Unknown concatenator: " + value);
-        };
+        return new PatternRepresentation.Event(identifier, conditions, quantifier, null);
     }
 
     private List<PatternRepresentation.Condition> parseConditions(Tree<String> conditionsNode) {
         List<PatternRepresentation.Condition> conditions = new ArrayList<>();
 
-        for (Tree<String> conditionNode : conditionsNode) {
-            if ("<condition>".equals(conditionNode.content())) {
-                conditions.add(parseCondition(conditionNode));
-            }
+        if (conditionsNode.nChildren() == 0) {
+            return conditions;  // Base case for empty node
         }
+
+        // Parse the first <condition>
+        Tree<String> firstConditionNode = conditionsNode.child(0);
+        PatternRepresentation.Condition firstCondition = parseCondition(firstConditionNode);
+        conditions.add(firstCondition);
+
+        // If there are more than one children, handle <cConcat> <conditions> recursively
+        if (conditionsNode.nChildren() > 1) {
+            Tree<String> concatNode = conditionsNode.child(1);  // <cConcat>
+            Tree<String> remainingConditionsNode = conditionsNode.child(2);  // <conditions>
+
+            PatternRepresentation.Condition.Concatenator concatenator = parseConditionConcatenator(concatNode);
+
+            // Recursively parse remaining conditions
+            List<PatternRepresentation.Condition> remainingConditions = parseConditions(remainingConditionsNode);
+
+            // Attach concatenator to the first condition in the remaining list
+            if (!remainingConditions.isEmpty()) {
+                PatternRepresentation.Condition firstRemainingCondition = remainingConditions.get(0);
+                remainingConditions.set(0, new PatternRepresentation.Condition(
+                        firstRemainingCondition.variable(),
+                        firstRemainingCondition.operator(),
+                        firstRemainingCondition.value(),
+                        concatenator
+                ));
+            }
+
+            // Add remaining conditions to the main conditions list
+            conditions.addAll(remainingConditions);
+        }
+
         return conditions;
     }
 
+    private PatternRepresentation.Event.Concatenator parseConcatenator(Tree<String> concatNode) {
+        String value = concatNode.visitLeaves().get(0);
+        return switch (value) {
+            case "next" -> PatternRepresentation.Event.Concatenator.NEXT;
+            case "followedBy" -> PatternRepresentation.Event.Concatenator.FOLLOWED_BY;
+            case "followedByAny" -> PatternRepresentation.Event.Concatenator.FOLLOWED_BY_ANY;
+            default -> throw new IllegalArgumentException("Unknown concatenator: " + value);
+        };
+    }
+
     private PatternRepresentation.Condition parseCondition(Tree<String> conditionNode) {
-        PatternRepresentation.Condition.Concatenator concat = null;
         String variable = null;
         PatternRepresentation.Condition.Operator operator = null;
         float value = 0.0f;
 
         for (Tree<String> child : conditionNode) {
             switch (child.content()) {
-                case "<cConcat>":
-                    concat = parseConditionConcatenator(child);
-                    break;
                 case "<var>":
                     variable = child.visitLeaves().get(0);
                     break;
@@ -109,7 +154,7 @@ public class PatternMapper implements Function<Tree<String>, PatternRepresentati
                     break;
             }
         }
-        return new PatternRepresentation.Condition(concat, variable, operator, value);
+        return new PatternRepresentation.Condition(variable, operator, value, null);
     }
 
     private PatternRepresentation.Condition.Concatenator parseConditionConcatenator(Tree<String> concatNode) {
@@ -142,30 +187,23 @@ public class PatternMapper implements Function<Tree<String>, PatternRepresentati
             }
         }
 
-        try {
-            return Float.parseFloat(fNumStr.toString());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Failed to parse floating number from string: " + fNumStr, e);
-        }
+        return Float.parseFloat(fNumStr.toString());
     }
 
     private PatternRepresentation.Quantifier parseQuantifier(Tree<String> quantifierNode) {
         Tree<String> quantNode = quantifierNode.child(0);
-        if ("oneOrMore".equals(quantNode.content())) {
-            return PatternRepresentation.Quantifier.ParamFree.ONE_OR_MORE;
-        } else if ("optional".equals(quantNode.content())) {
-            return PatternRepresentation.Quantifier.ParamFree.OPTIONAL;
-        } else if ("<iNum>".equals(quantNode.content())) {
-            int n = Integer.parseInt(quantNode.visitLeaves().get(0));
-            return new PatternRepresentation.Quantifier.NTimes(n);
-        } else {
-            throw new IllegalArgumentException("Unknown quantifier: " + quantNode.content());
-        }
+        return switch (quantNode.content()) {
+            case "oneOrMore" -> PatternRepresentation.Quantifier.ParamFree.ONE_OR_MORE;
+            case "optional" -> PatternRepresentation.Quantifier.ParamFree.OPTIONAL;
+            case "<iNum>" -> new PatternRepresentation.Quantifier.NTimes(
+                    Integer.parseInt(quantNode.visitLeaves().get(0))
+            );
+            default -> throw new IllegalArgumentException("Unknown quantifier: " + quantNode.content());
+        };
     }
 
     private PatternRepresentation.WithinClause parseWithinClause(Tree<String> withinClauseNode) {
-        Tree<String> fNumNode = withinClauseNode.child(0);
-        float duration = parseFNum(fNumNode);
+        float duration = parseFNum(withinClauseNode.child(0));
         return new PatternRepresentation.WithinClause(duration);
     }
 }

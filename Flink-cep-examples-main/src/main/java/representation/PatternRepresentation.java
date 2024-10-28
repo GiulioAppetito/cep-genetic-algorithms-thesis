@@ -1,56 +1,89 @@
 package representation;
 
 import java.io.Serializable;
-import cep.events.BaseEvent;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public record PatternRepresentation(
-        List<SingleEvent> events,
+        List<Event> events,
         WithinClause withinClause
 ) implements Serializable {
 
-    public record SingleEvent(
-            Concatenator concatenator,
+    @Override
+    public String toString() {
+        String eventsStr = events.stream()
+                .map(Event::toString)
+                .collect(Collectors.joining(",\n  "));
+
+        return "PatternRepresentation {\n" +
+                "  events=[\n  " + eventsStr + "\n  ],\n" +
+                "  withinClause=" + withinClause + "\n" +
+                "}";
+    }
+
+    public record Event(
             String identifier,
             List<Condition> conditions,
-            Quantifier quantifier
+            Quantifier quantifier,
+            Concatenator concatenator
     ) implements Serializable {
+        @Override
+        public String toString() {
+            String conditionsStr = conditions.stream()
+                    .map(Condition::toString)
+                    .collect(Collectors.joining(", "));
+
+            return "Event {\n" +
+                    "    identifier='" + identifier + "',\n" +
+                    "    conditions=[" + conditionsStr + "],\n" +
+                    "    quantifier=" + quantifier + ",\n" +
+                    "    concatenator=" + concatenator + "\n" +
+                    "  }";
+        }
+
         public enum Concatenator implements Serializable {
-            NEXT,
-            FOLLOWED_BY,
-            FOLLOWED_BY_ANY
+            NEXT, FOLLOWED_BY, FOLLOWED_BY_ANY
         }
     }
 
-    public record WithinClause(
-            float duration
-    ) implements Serializable {}
+    public record WithinClause(float duration) implements Serializable {
+        @Override
+        public String toString() {
+            return "WithinClause { duration=" + duration + " }";
+        }
+    }
 
     public interface Quantifier extends Serializable {
         enum ParamFree implements Quantifier {
-            ONE_OR_MORE,
-            OPTIONAL
+            ONE_OR_MORE, OPTIONAL
         }
 
-        record NTimes(int n) implements Quantifier {}
+        record NTimes(int n) implements Quantifier {
+            @Override
+            public String toString() {
+                return "NTimes { n=" + n + " }";
+            }
+        }
     }
 
     public record Condition(
-            Concatenator concatenator,
             String variable,
             Operator operator,
-            float value
+            float value,
+            Concatenator concatenator
     ) implements Serializable {
+        @Override
+        public String toString() {
+            return "Condition { variable='" + variable + "', operator=" + operator + ", value=" + value +
+                    (concatenator != null ? ", concatenator=" + concatenator : "") + " }";
+        }
+
         public enum Operator implements Serializable {
-            EQUAL,
-            NOT_EQUAL,
-            LESS_THAN,
-            GREATER_THAN
+            EQUAL, NOT_EQUAL, LESS_THAN, GREATER_THAN
         }
 
         public enum Concatenator implements Serializable {
-            AND,
-            OR
+            AND, OR
         }
     }
 }

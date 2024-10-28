@@ -1,11 +1,11 @@
 <pattern> ::= <events> <withinClause> | <events>
 <withinClause> ::= <fNum>
-<events> ::= <event> | <events> <event>
-<event> ::= <eConcat> <identifier> <conditions> <quantifier>
+<events> ::= <event> | <event> <eConcat> <events>
+<event> ::= <identifier> <conditions> <quantifier>
+<conditions> ::= <condition> | <condition> <cConcat> <conditions>
+<condition> ::= <var> <op> <fNum>
 <eConcat> ::= next | followedBy | followedByAny
 <identifier> ::= event1 | event2 | event3 | event4 | event5
-<conditions> ::= <condition> | <conditions> <condition>
-<condition> ::= <cConcat> <var> <op> <fNum>
 <cConcat> ::= and | or
 <op> ::= equal | notEqual | lt | gt
 <var> ::= v1 | v2 | v3 | v4 | v5

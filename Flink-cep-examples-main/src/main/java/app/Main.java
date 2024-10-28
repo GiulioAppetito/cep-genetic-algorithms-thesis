@@ -23,17 +23,17 @@ public class Main {
             System.out.println(grammar);
 
             // Initialize a tree factory with a maximum depth for random generation
-            GrowGrammarTreeFactory<String> treeFactory = new GrowGrammarTreeFactory<>(40, grammar);
+            GrowGrammarTreeFactory<String> treeFactory = new GrowGrammarTreeFactory<>(1000, grammar);
 
             // Generate the random tree
-            Tree<String> randomTree = treeFactory.build(new Random(), 40);
+            Tree<String> randomTree = treeFactory.build(new Random(), 10);
 
             if (randomTree != null) {
                 System.out.println("Generated Random Tree:");
                 randomTree.prettyPrint(System.out);  // Output the tree structure
 
                 // Apply PatternMapper to convert tree into PatternRepresentation
-                System.out.println("Applying pattern mapper...");
+                System.out.println("\n********** Applying pattern mapper... **********");
                 PatternMapper mapper = new PatternMapper();
                 PatternRepresentation patternRepresentation = mapper.apply(randomTree); // Map the random tree to PatternRepresentation
 
