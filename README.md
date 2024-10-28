@@ -1,3 +1,4 @@
+# Flink CEP Patter generation with Genetic Algorithms
 This project leverages Apache Flink's Complex Event Processing (CEP) library for real-time event pattern detection, coupled with genetic algorithms to optimize these patterns. The main goal is to allow users to define, apply, and evolve event patterns for data stream analysis.
 
 ## Features
