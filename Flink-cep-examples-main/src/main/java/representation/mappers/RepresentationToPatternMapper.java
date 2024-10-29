@@ -62,10 +62,6 @@ public class RepresentationToPatternMapper<E> {
 
         @Override
         public boolean filter(E value, Context<E> ctx) throws Exception {
-            // Adattare la logica di filtraggio in base al tipo specifico di E.
-            // La logica sotto è un esempio generico e può essere modificata.
-            // Se `E` è una mappa, potrebbe essere necessario fare un cast o accedere direttamente.
-
             if (value instanceof java.util.Map) {
                 @SuppressWarnings("unchecked")
                 java.util.Map<String, Float> map = (java.util.Map<String, Float>) value;
@@ -84,7 +80,6 @@ public class RepresentationToPatternMapper<E> {
                     case GREATER_THAN -> variableValue > condition.value();
                 };
             }
-            // Gestione del caso di fallback, nel caso il tipo non sia una mappa.
             return false;
         }
     }
