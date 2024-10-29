@@ -1,14 +1,15 @@
-// RepresentationToPatternMapper.java
 package representation.mappers;
 
+import events.BaseEvent;
 import org.apache.flink.cep.pattern.Pattern;
 import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import representation.PatternRepresentation;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
-public class RepresentationToPatternMapper<E> {
+public class RepresentationToPatternMapper<E extends BaseEvent> {
 
     public Pattern<E, ?> convert(PatternRepresentation representation) {
         List<PatternRepresentation.Event> events = representation.events();
@@ -19,9 +20,9 @@ public class RepresentationToPatternMapper<E> {
             Pattern<E, E> newPattern = createPatternForEvent(event);
 
             if (flinkPattern == null) {
-                flinkPattern = newPattern;  // Set the first event as the starting point
+                // Set the first event as the starting point
+                flinkPattern = newPattern;
             } else {
-                // Link patterns using concatenators (e.g., next, followedBy)
                 PatternRepresentation.Event.Concatenator concatenator = events.get(i - 1).concatenator();
                 if (concatenator != null) {
                     flinkPattern = switch (concatenator) {
@@ -30,14 +31,12 @@ public class RepresentationToPatternMapper<E> {
                         case FOLLOWED_BY_ANY -> flinkPattern.followedByAny(newPattern);
                     };
                 } else {
-                    // Handle cases where concatenator is null (e.g., first event)
                     flinkPattern = flinkPattern.next(newPattern);
                 }
-
             }
         }
 
-        // Apply within clause (time window) if specified
+        // Apply within clause if specified
         if (representation.withinClause() != null) {
             flinkPattern = flinkPattern.within(Duration.ofSeconds((long) representation.withinClause().duration()));
         }
@@ -67,7 +66,7 @@ public class RepresentationToPatternMapper<E> {
     }
 
     // Inner class for handling SimpleCondition
-    private static class SimpleEventCondition<E> extends SimpleCondition<E> {
+    private static class SimpleEventCondition<E extends BaseEvent> extends SimpleCondition<E> {
         private final PatternRepresentation.Condition condition;
 
         public SimpleEventCondition(PatternRepresentation.Condition condition) {
@@ -76,29 +75,26 @@ public class RepresentationToPatternMapper<E> {
 
         @Override
         public boolean filter(E value) throws Exception {
-            if (value instanceof java.util.Map) {
-                java.util.Map<String, Float> map = (java.util.Map<String, Float>) value;
-                Float variableValue = map.get(condition.variable());
+            // Use the toMap() method from BaseEvent to get the field values
+            Map<String, Object> eventMap = value.toMap();
 
+            // Get the value of the specified variable from the map
+            Object fieldValue = eventMap.get(condition.variable());
 
-                // Check if variable exists
-                if (variableValue == null) {
-                    return false;
-                }
+            if (fieldValue instanceof Float) {
+                Float variableValue = (Float) fieldValue;
 
-                // Perform condition check
-                boolean result = switch (condition.operator()) {
+                // Condition check
+                return switch (condition.operator()) {
                     case EQUAL -> variableValue.equals(condition.value());
                     case NOT_EQUAL -> !variableValue.equals(condition.value());
                     case LESS_THAN -> variableValue < condition.value();
                     case GREATER_THAN -> variableValue > condition.value();
                 };
-
-                return result;
+            } else {
+                System.out.println("Variable is not a float type or not found: " + fieldValue);
+                return false;
             }
-
-            System.out.println("Event type not recognized as map, condition skipped: " + value);
-            return false;
         }
     }
 }
