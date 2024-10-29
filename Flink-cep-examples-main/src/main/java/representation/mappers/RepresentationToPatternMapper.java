@@ -1,7 +1,8 @@
+// RepresentationToPatternMapper.java
 package representation.mappers;
 
 import org.apache.flink.cep.pattern.Pattern;
-import org.apache.flink.cep.pattern.conditions.IterativeCondition;
+import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import representation.PatternRepresentation;
 
 import java.time.Duration;
@@ -13,20 +14,30 @@ public class RepresentationToPatternMapper<E> {
         List<PatternRepresentation.Event> events = representation.events();
         Pattern<E, E> flinkPattern = null;
 
-        for (PatternRepresentation.Event event : events) {
+        for (int i = 0; i < events.size(); i++) {
+            PatternRepresentation.Event event = events.get(i);
             Pattern<E, E> newPattern = createPatternForEvent(event);
 
             if (flinkPattern == null) {
-                flinkPattern = newPattern;
+                flinkPattern = newPattern;  // Set the first event as the starting point
             } else {
-                switch (event.concatenator()) {
-                    case NEXT -> flinkPattern = flinkPattern.next(newPattern);
-                    case FOLLOWED_BY -> flinkPattern = flinkPattern.followedBy(newPattern);
-                    case FOLLOWED_BY_ANY -> flinkPattern = flinkPattern.followedByAny(newPattern);
+                // Link patterns using concatenators (e.g., next, followedBy)
+                PatternRepresentation.Event.Concatenator concatenator = events.get(i - 1).concatenator();
+                if (concatenator != null) {
+                    flinkPattern = switch (concatenator) {
+                        case NEXT -> flinkPattern.next(newPattern);
+                        case FOLLOWED_BY -> flinkPattern.followedBy(newPattern);
+                        case FOLLOWED_BY_ANY -> flinkPattern.followedByAny(newPattern);
+                    };
+                } else {
+                    // Handle cases where concatenator is null (e.g., first event)
+                    flinkPattern = flinkPattern.next(newPattern);
                 }
+
             }
         }
 
+        // Apply within clause (time window) if specified
         if (representation.withinClause() != null) {
             flinkPattern = flinkPattern.within(Duration.ofSeconds((long) representation.withinClause().duration()));
         }
@@ -37,49 +48,56 @@ public class RepresentationToPatternMapper<E> {
     private Pattern<E, E> createPatternForEvent(PatternRepresentation.Event event) {
         Pattern<E, E> pattern = Pattern.<E>begin(event.identifier());
 
+        // Handle quantifiers such as oneOrMore, optional, etc.
         if (event.quantifier() instanceof PatternRepresentation.Quantifier.ParamFree quantifier) {
-            switch (quantifier) {
-                case ONE_OR_MORE -> pattern = pattern.oneOrMore();
-                case OPTIONAL -> pattern = pattern.optional();
-            }
+            pattern = switch (quantifier) {
+                case ONE_OR_MORE -> pattern.oneOrMore();
+                case OPTIONAL -> pattern.optional();
+            };
         } else if (event.quantifier() instanceof PatternRepresentation.Quantifier.NTimes nTimes) {
             pattern = pattern.times(nTimes.n());
         }
 
+        // Attach conditions using SimpleCondition
         for (PatternRepresentation.Condition condition : event.conditions()) {
-            pattern = pattern.where(new EventCondition<>(condition));
+            pattern = pattern.where(new SimpleEventCondition<>(condition));
         }
 
         return pattern;
     }
 
-    private static class EventCondition<E> extends IterativeCondition<E> {
+    // Inner class for handling SimpleCondition
+    private static class SimpleEventCondition<E> extends SimpleCondition<E> {
         private final PatternRepresentation.Condition condition;
 
-        public EventCondition(PatternRepresentation.Condition condition) {
+        public SimpleEventCondition(PatternRepresentation.Condition condition) {
             this.condition = condition;
         }
 
         @Override
-        public boolean filter(E value, Context<E> ctx) throws Exception {
+        public boolean filter(E value) throws Exception {
             if (value instanceof java.util.Map) {
-                @SuppressWarnings("unchecked")
                 java.util.Map<String, Float> map = (java.util.Map<String, Float>) value;
                 Float variableValue = map.get(condition.variable());
-                System.out.println("Filtering event: " + value + " with condition: " + condition);
 
+
+                // Check if variable exists
                 if (variableValue == null) {
-                    System.out.println("Variable value is null for " + condition.variable());
                     return false;
                 }
 
-                return switch (condition.operator()) {
+                // Perform condition check
+                boolean result = switch (condition.operator()) {
                     case EQUAL -> variableValue.equals(condition.value());
                     case NOT_EQUAL -> !variableValue.equals(condition.value());
                     case LESS_THAN -> variableValue < condition.value();
                     case GREATER_THAN -> variableValue > condition.value();
                 };
+
+                return result;
             }
+
+            System.out.println("Event type not recognized as map, condition skipped: " + value);
             return false;
         }
     }

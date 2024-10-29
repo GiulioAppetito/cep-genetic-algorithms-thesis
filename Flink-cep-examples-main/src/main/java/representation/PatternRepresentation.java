@@ -25,7 +25,7 @@ public record PatternRepresentation(
             String identifier,
             List<Condition> conditions,
             Quantifier quantifier,
-            Concatenator concatenator
+            Concatenator concatenator // Concatenator with respect to the next event
     ) implements Serializable {
         @Override
         public String toString() {
