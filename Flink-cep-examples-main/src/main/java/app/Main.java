@@ -1,50 +1,66 @@
 package app;
 
 import events.BaseEvent;
-import events.custom.ExampleEvent;
 import events.source.EventSource;
-import org.apache.flink.cep.CEP;
-import org.apache.flink.cep.PatternSelectFunction;
-import org.apache.flink.cep.PatternStream;
 import org.apache.flink.cep.pattern.Pattern;
+import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import representation.PatternRepresentation;
 import representation.mappers.RepresentationToPatternMapper;
+import fitness.FitnessCalculator;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.StringGrammar;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.cfggp.GrowGrammarTreeFactory;
 import io.github.ericmedvet.jgea.core.representation.tree.Tree;
 import representation.mappers.TreeToRepresentationMapper;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
         try {
             // Load Grammar and Generate Random Tree
-            StringGrammar<String> grammar = loadGrammar("/FlinkCEPGrammar.bnf");
+            StringGrammar<String> grammar = loadGrammar("/grammars/FlinkCEPGrammar.bnf");
             Tree<String> randomTree = generateRandomTree(grammar);
 
             if (randomTree != null) {
                 // Convert the Tree to PatternRepresentation
                 PatternRepresentation patternRepresentation = mapTreeToPattern(randomTree);
 
-                // Convert PatternRepresentation to Flink Pattern
+                // Convert PatternRepresentation to Flink CEP Pattern
                 Pattern<BaseEvent, ?> flinkPattern = mapPatternRepresentationToFlinkPattern(patternRepresentation);
 
-                // Set Up Flink Environment and Create DataStream
+                // Set Up Flink Environment and Create a DataStream
                 StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
-                // Generate a specified number of ExampleEvents with random data
                 int numberOfEvents = 100;
                 DataStream<BaseEvent> eventStream = EventSource.generateHardcodedEventDataStream(env, numberOfEvents);
 
-                // Apply the Pattern and Print Results
-                applyPatternAndPrintResults(env, eventStream, flinkPattern);
+                // Define reference patterns
+                List<Pattern<BaseEvent, ?>> referencePatterns = new ArrayList<>();
+                Pattern<BaseEvent, BaseEvent> pattern2 = Pattern
+                        .<BaseEvent>begin("event1")
+                        .where(new SimpleCondition<BaseEvent>() {
+                            @Override
+                            public boolean filter(BaseEvent event) {
+                                return (float) event.toMap().get("v1") > 0.0;
+                            }
+                        })
+                        .next("event2")
+                        .where(new SimpleCondition<BaseEvent>() {
+                            @Override
+                            public boolean filter(BaseEvent event) {
+                                return (float) event.toMap().get("v2") < 0.0;
+                            }
+                        });
+                referencePatterns.add(pattern2);
 
-                // Execute the Flink job
-                env.execute("CEP Pattern Matching Application with Random Grammar Tree");
+                // Calculate fitness
+                System.out.println("\n********** Computing fitness... **********\n");
+                double fitness = FitnessCalculator.calculateFitness(env, eventStream, referencePatterns, flinkPattern);
+                System.out.println("Fitness: " + fitness + "%");
             } else {
                 System.out.println("Random Tree generation returned null.");
             }
@@ -97,31 +113,5 @@ public class Main {
         System.out.println("\nGenerated Flink Pattern:\n");
         System.out.println(flinkPattern);
         return flinkPattern;
-    }
-
-    // Apply Pattern and Print Results
-    private static void applyPatternAndPrintResults(StreamExecutionEnvironment env, DataStream<BaseEvent> inputDataStream, Pattern<BaseEvent, ?> flinkPattern) {
-        PatternStream<BaseEvent> patternStream = CEP.pattern(inputDataStream, flinkPattern);
-
-        DataStream<String> resultStream = patternStream.select(
-                (PatternSelectFunction<BaseEvent, String>) matchedEvents -> {
-                    StringBuilder result = new StringBuilder("Matched Events: ");
-                    matchedEvents.forEach((key, events) -> {
-                        for (BaseEvent event : events) {
-                            result.append(key).append("=").append(event.toMap()).append(", ");
-                        }
-                    });
-
-                    // Remove comma and space
-                    if (result.length() > 0) {
-                        result.setLength(result.length() - 2);
-                    }
-
-                    return result.toString();
-                }
-        );
-
-        // Print all matches
-        resultStream.print();
     }
 }
