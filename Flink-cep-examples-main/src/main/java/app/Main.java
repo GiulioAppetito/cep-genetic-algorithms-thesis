@@ -2,16 +2,16 @@ package app;
 
 import events.BaseEvent;
 import events.source.EventSource;
+import fitness.FitnessCalculator;
+import io.github.ericmedvet.jgea.core.representation.grammar.string.StringGrammar;
+import io.github.ericmedvet.jgea.core.representation.grammar.string.cfggp.GrowGrammarTreeFactory;
+import io.github.ericmedvet.jgea.core.representation.tree.Tree;
 import org.apache.flink.cep.pattern.Pattern;
 import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import representation.PatternRepresentation;
 import representation.mappers.RepresentationToPatternMapper;
-import fitness.FitnessCalculator;
-import io.github.ericmedvet.jgea.core.representation.grammar.string.StringGrammar;
-import io.github.ericmedvet.jgea.core.representation.grammar.string.cfggp.GrowGrammarTreeFactory;
-import io.github.ericmedvet.jgea.core.representation.tree.Tree;
 import representation.mappers.TreeToRepresentationMapper;
 
 import java.io.InputStream;
@@ -98,13 +98,13 @@ public class Main {
     // Generate Random Tree Using Grammar
     private static Tree<String> generateRandomTree(StringGrammar<String> grammar) {
         int MAX_HEIGHT = 100;
-        int TARGET_DEPTH = 7;
+        int TARGET_DEPTH = 10;
 
         GrowGrammarTreeFactory<String> treeFactory = new GrowGrammarTreeFactory<>(MAX_HEIGHT, grammar);
         Tree<String> randomTree = treeFactory.build(new Random(), TARGET_DEPTH);
 
         if (randomTree != null) {
-            System.out.println("Generated Random Tree:");
+            System.out.println("JGEA Generated Random Tree:");
             randomTree.prettyPrint(System.out);
         }
 

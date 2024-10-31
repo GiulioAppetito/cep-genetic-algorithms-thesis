@@ -1,7 +1,7 @@
 package representation.mappers;
 
-import representation.PatternRepresentation;
 import io.github.ericmedvet.jgea.core.representation.tree.Tree;
+import representation.PatternRepresentation;
 
 import java.util.ArrayList;
 import java.util.List;
