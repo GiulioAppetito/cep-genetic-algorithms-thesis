@@ -19,13 +19,13 @@ public class FitnessCalculator {
             List<Pattern<BaseEvent, ?>> referencePatterns,
             Pattern<BaseEvent, ?> generatedPattern) throws Exception {
 
-        // Step 1: Find target events from reference patterns
+        // Find target events from reference patterns
         Set<Map<String, Object>> targetEvents = collectMatches(inputDataStream, referencePatterns);
 
-        // Step 2: Find detected events from the generated pattern
+        // Find detected events from the generated pattern
         Set<Map<String, Object>> detectedEvents = collectMatches(inputDataStream, Collections.singletonList(generatedPattern));
 
-        // Step 3: Calculate fitness as the percentage of target events detected
+        // Calculate fitness as the percentage of target events detected
         return calculateFitnessScore(targetEvents, detectedEvents);
     }
 
@@ -58,7 +58,6 @@ public class FitnessCalculator {
         return targetCount == 0 ? 0.0 : (double) detectedTargetCount / targetCount * 100.0;
     }
 
-    // Inner class for reusing the select function logic
     private static class PatternToListSelectFunction implements PatternSelectFunction<BaseEvent, List<BaseEvent>> {
         @Override
         public List<BaseEvent> select(Map<String, List<BaseEvent>> match) {

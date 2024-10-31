@@ -1,5 +1,5 @@
 <pattern> ::= <events> <withinClause> | <events>
-<withinClause> ::= <fNum>
+<withinClause> ::= <iNum>
 <events> ::= <event> | <event> <eConcat> <events>
 <event> ::= <identifier> <conditions> <quantifier>
 <conditions> ::= <condition> | <condition> <cConcat> <conditions>

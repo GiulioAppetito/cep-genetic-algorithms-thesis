@@ -40,7 +40,7 @@ public class Main {
 
                 // Define reference patterns
                 List<Pattern<BaseEvent, ?>> referencePatterns = new ArrayList<>();
-                Pattern<BaseEvent, BaseEvent> pattern2 = Pattern
+                Pattern<BaseEvent, BaseEvent> pattern1 = Pattern
                         .<BaseEvent>begin("event1")
                         .where(new SimpleCondition<BaseEvent>() {
                             @Override
@@ -55,10 +55,26 @@ public class Main {
                                 return (float) event.toMap().get("v2") < 0.0;
                             }
                         });
+                referencePatterns.add(pattern1);
+                Pattern<BaseEvent, BaseEvent> pattern2 = Pattern
+                        .<BaseEvent>begin("event1")
+                        .where(new SimpleCondition<BaseEvent>() {
+                            @Override
+                            public boolean filter(BaseEvent event) {
+                                return (float) event.toMap().get("v3") > 0.0;
+                            }
+                        })
+                        .next("event2")
+                        .where(new SimpleCondition<BaseEvent>() {
+                            @Override
+                            public boolean filter(BaseEvent event) {
+                                return (float) event.toMap().get("v4") < 0.0;
+                            }
+                        });
                 referencePatterns.add(pattern2);
 
                 // Calculate fitness
-                System.out.println("\n********** Computing fitness... **********\n");
+                System.out.println("\n______________________________ Computing fitness... ______________________________\n");
                 double fitness = FitnessCalculator.calculateFitness(env, eventStream, referencePatterns, flinkPattern);
                 System.out.println("Fitness: " + fitness + "%");
             } else {
@@ -97,7 +113,7 @@ public class Main {
 
     // Convert Tree to PatternRepresentation
     private static PatternRepresentation mapTreeToPattern(Tree<String> randomTree) {
-        System.out.println("\n********** Applying pattern mapper... **********");
+        System.out.println("\n______________________________ Applying pattern mapper... ______________________________");
         TreeToRepresentationMapper toRepresentationMapper = new TreeToRepresentationMapper();
         PatternRepresentation patternRepresentation = toRepresentationMapper.apply(randomTree);
         System.out.println("\nMapped PatternRepresentation:\n");
@@ -105,9 +121,9 @@ public class Main {
         return patternRepresentation;
     }
 
-    // Convert PatternRepresentation to Flink Pattern
+    // Convert PatternRepresentation to Flink CEP Pattern
     private static Pattern<BaseEvent, ?> mapPatternRepresentationToFlinkPattern(PatternRepresentation patternRepresentation) {
-        System.out.println("\n********** Converting to Flink Pattern... **********");
+        System.out.println("\n______________________________ Converting to Flink Pattern... ______________________________");
         RepresentationToPatternMapper<BaseEvent> toPatternMapper = new RepresentationToPatternMapper<>();
         Pattern<BaseEvent, ?> flinkPattern = toPatternMapper.convert(patternRepresentation);
         System.out.println("\nGenerated Flink Pattern:\n");
