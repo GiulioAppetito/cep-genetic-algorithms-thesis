@@ -15,6 +15,7 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
         List<PatternRepresentation.Event> events = representation.events();
         Pattern<E, E> flinkPattern = null;
 
+        // Loop through all the events in the pattern representation
         for (int i = 0; i < events.size(); i++) {
             PatternRepresentation.Event event = events.get(i);
             Pattern<E, E> newPattern = createPatternForEvent(event);
@@ -23,6 +24,7 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
                 // Set the first event as the starting point
                 flinkPattern = newPattern;
             } else {
+                // Apply concatenation between the current and previous events if defined
                 PatternRepresentation.Event.Concatenator concatenator = events.get(i - 1).concatenator();
                 if (concatenator != null) {
                     flinkPattern = switch (concatenator) {
@@ -44,7 +46,11 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
         return flinkPattern;
     }
 
+    /**
+     * Creates a Flink CEP pattern for a single event.
+     */
     private Pattern<E, E> createPatternForEvent(PatternRepresentation.Event event) {
+        // Start by defining the base pattern for the event
         Pattern<E, E> pattern = Pattern.<E>begin(event.identifier());
 
         // Handle quantifiers such as oneOrMore, optional, etc.
@@ -74,25 +80,31 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
         }
 
         @Override
-        public boolean filter(E value) throws Exception {
+        public boolean filter(E value) {
             // Use the toMap() method from BaseEvent to get the field values
             Map<String, Object> eventMap = value.toMap();
 
             // Get the value of the specified variable from the map
             Object fieldValue = eventMap.get(condition.variable());
 
+            // Handle different data types like Float and Boolean
             if (fieldValue instanceof Float) {
-                Float variableValue = (Float) fieldValue;
-
-                // Condition check
+                // Print a message when the field is of type Float
+                System.out.println("The field value is a Float: " + fieldValue);
+                return false; // Return false as we are not applying a condition on Float
+            } else if (fieldValue instanceof Boolean variableValue) {
+                // Use the boolean value from the condition directly
+                boolean conditionValue = condition.value();
                 return switch (condition.operator()) {
-                    case EQUAL -> variableValue.equals(condition.value());
-                    case NOT_EQUAL -> !variableValue.equals(condition.value());
-                    case LESS_THAN -> variableValue < condition.value();
-                    case GREATER_THAN -> variableValue > condition.value();
+                    case EQUAL -> variableValue.equals(conditionValue);
+                    case NOT_EQUAL -> !variableValue.equals(conditionValue);
+                    default -> {
+                        System.out.println("Invalid operator for boolean field: " + condition.operator());
+                        yield false;
+                    }
                 };
             } else {
-                System.out.println("Variable is not a float type or not found: " + fieldValue);
+                System.out.println("Variable type is not supported or not found: " + fieldValue);
                 return false;
             }
         }

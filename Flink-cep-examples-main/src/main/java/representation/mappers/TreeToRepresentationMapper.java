@@ -36,7 +36,7 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
         List<PatternRepresentation.Event> events = new ArrayList<>();
 
         if (eventsNode.nChildren() == 0) {
-            return events;  // Base case for empty node.
+            return events;  // Base case for an empty node.
         }
 
         // Parse the first <event>.
@@ -44,14 +44,14 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
         PatternRepresentation.Event firstEvent = parseSingleEvent(firstEventNode);
         events.add(firstEvent);
 
-        // If there are more than one children, handle <eConcat> <events> recursively.
+        // If there are more children, handle <eConcat> <events> recursively.
         if (eventsNode.nChildren() > 1) {
             Tree<String> concatNode = eventsNode.child(1);  // <eConcat>
             Tree<String> remainingEventsNode = eventsNode.child(2);  // <events>
 
             PatternRepresentation.Event.Concatenator concatenator = parseConcatenator(concatNode);
 
-            // Recursively parse remaining events.
+            // Recursively parse the remaining events.
             List<PatternRepresentation.Event> remainingEvents = parseEvents(remainingEventsNode);
 
             // Attach concatenator to the first event in the remaining list.
@@ -65,13 +65,12 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
                 ));
             }
 
-            // Add remaining events to the main events list
+            // Add remaining events to the main events list.
             events.addAll(remainingEvents);
         }
 
         return events;
     }
-
 
     /**
      * <event> ::= <identifier> <conditions> <quantifier>
@@ -85,7 +84,7 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
         for (Tree<String> child : eventNode) {
             switch (child.content()) {
                 case "<identifier>":
-                    identifier = child.visitLeaves().get(0);  // Get identifier for the event
+                    identifier = child.visitLeaves().get(0);  // Get the identifier for the event
                     break;
                 case "<conditions>":
                     conditions = parseConditions(child);  // Parse all conditions within the event
@@ -106,7 +105,7 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
         List<PatternRepresentation.Condition> conditions = new ArrayList<>();
 
         if (conditionsNode.nChildren() == 0) {
-            return conditions;  // Base case for empty node
+            return conditions;  // Base case for an empty node
         }
 
         // Parse the first <condition>
@@ -114,14 +113,14 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
         PatternRepresentation.Condition firstCondition = parseCondition(firstConditionNode);
         conditions.add(firstCondition);
 
-        // If there are more than one children, handle <cConcat> <conditions> recursively
+        // If there are more children, handle <cConcat> <conditions> recursively
         if (conditionsNode.nChildren() > 1) {
             Tree<String> concatNode = conditionsNode.child(1);  // <cConcat>
             Tree<String> remainingConditionsNode = conditionsNode.child(2);  // <conditions>
 
             PatternRepresentation.Condition.Concatenator concatenator = parseConditionConcatenator(concatNode);
 
-            // Recursively parse remaining conditions
+            // Recursively parse the remaining conditions
             List<PatternRepresentation.Condition> remainingConditions = parseConditions(remainingConditionsNode);
 
             // Attach concatenator to the first condition in the remaining list
@@ -157,13 +156,13 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
     }
 
     /**
-     * <condition> ::= <var> <op> <fNum>
-     * Parses a single condition, including its variable, operator, and numeric value.
+     * <condition> ::= <var> <op> <boolean>
+     * Parses a single condition, including its variable, operator, and boolean value.
      */
     private PatternRepresentation.Condition parseCondition(Tree<String> conditionNode) {
         String variable = null;
         PatternRepresentation.Condition.Operator operator = null;
-        float value = 0.0f;
+        boolean value = false;  // Changed to boolean
 
         for (Tree<String> child : conditionNode) {
             switch (child.content()) {
@@ -173,12 +172,20 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
                 case "<op>":
                     operator = parseOperator(child);
                     break;
-                case "<fNum>":
-                    value = parseFNum(child);
+                case "<boolean>":  // Changed to <boolean>
+                    value = parseBoolean(child);
                     break;
             }
         }
         return new PatternRepresentation.Condition(variable, operator, value, null);
+    }
+
+    /**
+     * Parses a boolean value from <boolean> node.
+     */
+    private boolean parseBoolean(Tree<String> booleanNode) {
+        String value = booleanNode.visitLeaves().get(0);
+        return Boolean.parseBoolean(value);
     }
 
     /**
@@ -195,7 +202,7 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
     }
 
     /**
-     * <op> ::= equal | notEqual | lt | gt
+     * <op> ::= equal | notEqual
      * Parses comparison operators within a condition.
      */
     private PatternRepresentation.Condition.Operator parseOperator(Tree<String> opNode) {
@@ -203,27 +210,8 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
         return switch (value) {
             case "equal" -> PatternRepresentation.Condition.Operator.EQUAL;
             case "notEqual" -> PatternRepresentation.Condition.Operator.NOT_EQUAL;
-            case "lt" -> PatternRepresentation.Condition.Operator.LESS_THAN;
-            case "gt" -> PatternRepresentation.Condition.Operator.GREATER_THAN;
             default -> throw new IllegalArgumentException("Unknown operator: " + value);
         };
-    }
-
-    /**
-     * <fNum> ::= + <digit> . <digit> <digit> E <digit> | - <digit> . <digit> <digit> E <digit> | + <digit> . <digit> <digit> E - <digit> | - <digit> . <digit> <digit> E - <digit>
-     * Parses a floating-point number format with scientific notation.
-     */
-    private float parseFNum(Tree<String> fNumNode) {
-        StringBuilder fNumStr = new StringBuilder();
-
-        for (Tree<String> digitNode : fNumNode.leaves()) {
-            String content = digitNode.content();
-            if (content.matches("[0-9.+-E]")) {
-                fNumStr.append(content);
-            }
-        }
-
-        return Float.parseFloat(fNumStr.toString());
     }
 
     /**
@@ -243,11 +231,11 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
     }
 
     /**
-     * <withinClause> ::= <fNum>
+     * <withinClause> ::= <iNum>
      * Parses the time constraint applied to the event sequence.
      */
     private PatternRepresentation.WithinClause parseWithinClause(Tree<String> withinClauseNode) {
-        float duration = parseFNum(withinClauseNode.child(0));
+        int duration = Integer.parseInt(withinClauseNode.visitLeaves().get(0));
         return new PatternRepresentation.WithinClause(duration);
     }
 }

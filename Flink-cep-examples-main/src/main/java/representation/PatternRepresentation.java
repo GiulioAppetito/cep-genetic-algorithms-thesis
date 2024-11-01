@@ -25,7 +25,7 @@ public record PatternRepresentation(
             String identifier,
             List<Condition> conditions,
             Quantifier quantifier,
-            Concatenator concatenator // Concatenator with respect to the next event
+            Concatenator concatenator
     ) implements Serializable {
         @Override
         public String toString() {
@@ -41,11 +41,13 @@ public record PatternRepresentation(
                     "  }";
         }
 
+        // Defines the possible concatenators between events
         public enum Concatenator implements Serializable {
             NEXT, FOLLOWED_BY, FOLLOWED_BY_ANY
         }
     }
 
+    // Represents a within clause that defines the time constraint for a sequence
     public record WithinClause(float duration) implements Serializable {
         @Override
         public String toString() {
@@ -53,11 +55,13 @@ public record PatternRepresentation(
         }
     }
 
+    // Represents a quantifier for how many times an event should occur
     public interface Quantifier extends Serializable {
         enum ParamFree implements Quantifier {
             ONE_OR_MORE, OPTIONAL
         }
 
+        // Quantifier for specifying an exact number of occurrences
         record NTimes(int n) implements Quantifier {
             @Override
             public String toString() {
@@ -66,10 +70,11 @@ public record PatternRepresentation(
         }
     }
 
+    // Represents a condition associated with an event
     public record Condition(
             String variable,
             Operator operator,
-            float value,
+            boolean value,  // Updated to boolean type
             Concatenator concatenator
     ) implements Serializable {
         @Override
@@ -78,10 +83,12 @@ public record PatternRepresentation(
                     (concatenator != null ? ", concatenator=" + concatenator : "") + " }";
         }
 
+        // Defines possible operators for conditions
         public enum Operator implements Serializable {
-            EQUAL, NOT_EQUAL, LESS_THAN, GREATER_THAN
+            EQUAL, NOT_EQUAL
         }
 
+        // Defines logical concatenators for conditions (AND, OR)
         public enum Concatenator implements Serializable {
             AND, OR
         }
