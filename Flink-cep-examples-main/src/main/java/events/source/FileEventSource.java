@@ -1,7 +1,6 @@
 package events.source;
 
 import events.BaseEvent;
-import events.custom.LoginEvent;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -13,38 +12,36 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class FileEventSource {
 
-    // Generate a DataStream with LoginEvent instances from a CSV file
-    public static DataStream<BaseEvent> generateLoginEventDataStreamFromCSV(StreamExecutionEnvironment env, String csvFilePath) {
+    public static DataStream<BaseEvent> generateEventDataStreamFromCSV(StreamExecutionEnvironment env, String csvFilePath, Map<String, String> columnTypes) {
         List<BaseEvent> events = new ArrayList<>();
-        try {
-            Reader reader = new FileReader(csvFilePath);
-            CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT
-                    .withFirstRecordAsHeader()  // This line skips the header
-                    .withTrim());
-
+        try (Reader reader = new FileReader(csvFilePath); CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
             for (CSVRecord record : csvParser) {
-                try {
-                    // Parse the timestamp, ip address, and login status from CSV
-                    long timestamp = Long.parseLong(record.get("timestamp"));
-                    String ipAddress = record.get("ip_address");
-                    boolean successfulLogin = Boolean.parseBoolean(record.get("successful_login"));
+                BaseEvent event = new GenericEvent(Long.parseLong(record.get("timestamp")));
 
-                    // Create a LoginEvent
-                    LoginEvent event = new LoginEvent(timestamp, ipAddress, successfulLogin);
-                    events.add(event);
-                } catch (NumberFormatException e) {
-                    System.err.println("Skipping invalid record: " + record);
+                for (Map.Entry<String, String> entry : columnTypes.entrySet()) {
+                    String column = entry.getKey();
+                    String type = entry.getValue();
+                    String value = record.get(column);
+
+                    switch (type) {
+                        case "int" -> event.setAttribute(column, Integer.parseInt(value));
+                        case "float" -> event.setAttribute(column, Float.parseFloat(value));
+                        case "boolean" -> event.setAttribute(column, Boolean.parseBoolean(value));
+                        case "string" -> event.setAttribute(column, value);
+                        default -> throw new IllegalArgumentException("Unsupported data type: " + type);
+                    }
                 }
+                events.add(event);
             }
-            csvParser.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        System.out.println("Generated " + events.size() + " login events from CSV.");
+        System.out.println("Generated " + events.size() + " events from CSV.");
 
         return env.fromCollection(events)
                 .assignTimestampsAndWatermarks(
