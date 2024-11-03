@@ -21,16 +21,16 @@ public class FitnessCalculator {
             Pattern<BaseEvent, ?> generatedPattern) throws Exception {
 
         // Find target events from reference patterns
-        Set<Map<String, Object>> targetEvents = collectMatches(inputDataStream, referencePatterns);
+        Set<Map<String, Object>> targetEvents = collectMatches(inputDataStream, referencePatterns, "Target");
 
         // Find detected events from the generated pattern
-        Set<Map<String, Object>> detectedEvents = collectMatches(inputDataStream, Collections.singletonList(generatedPattern));
+        Set<Map<String, Object>> detectedEvents = collectMatches(inputDataStream, Collections.singletonList(generatedPattern), "Generated");
 
         // Calculate fitness as the percentage of target events detected
         return calculateFitnessScore(targetEvents, detectedEvents);
     }
 
-    private static Set<Map<String, Object>> collectMatches(DataStream<BaseEvent> inputDataStream, List<Pattern<BaseEvent, ?>> patterns) throws Exception {
+    private static Set<Map<String, Object>> collectMatches(DataStream<BaseEvent> inputDataStream, List<Pattern<BaseEvent, ?>> patterns, String type) throws Exception {
         Set<Map<String, Object>> eventsSet = new HashSet<>();
 
         for (Pattern<BaseEvent, ?> pattern : patterns) {
@@ -41,6 +41,7 @@ public class FitnessCalculator {
                 List<BaseEvent> eventsList = iterator.next();
                 for (BaseEvent event : eventsList) {
                     eventsSet.add(new HashMap<>(event.toMap()));
+                    System.out.println("[" + type + "] " + "match: " + event.toMap());
                 }
             }
         }

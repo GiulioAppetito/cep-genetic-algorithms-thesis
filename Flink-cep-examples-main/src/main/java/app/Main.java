@@ -31,7 +31,7 @@ public class Main {
                 PatternRepresentation patternRepresentation = mapTreeToPattern(randomTree);
 
                 // Convert PatternRepresentation to Flink CEP Pattern
-                Pattern<BaseEvent, ?> flinkPattern = mapPatternRepresentationToFlinkPattern(patternRepresentation);
+                Pattern<BaseEvent, ?> generatedPattern = mapPatternRepresentationToFlinkPattern(patternRepresentation);
 
                 // Set Up Flink Environment and Create a DataStream
                 StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -39,7 +39,7 @@ public class Main {
                 DataStream<BaseEvent> eventStream = EventSource.generateHardcodedEventDataStream(env, numberOfEvents);
 
                 // Define reference patterns
-                List<Pattern<BaseEvent, ?>> referencePatterns = new ArrayList<>();
+                List<Pattern<BaseEvent, ?>> targetPatterns = new ArrayList<>();
                 Pattern<BaseEvent, BaseEvent> pattern1 = Pattern
                         .<BaseEvent>begin("event1")
                         .where(new SimpleCondition<BaseEvent>() {
@@ -55,7 +55,7 @@ public class Main {
                                 return (float) event.toMap().get("v2") < 0.0;
                             }
                         });
-                referencePatterns.add(pattern1);
+                targetPatterns.add(pattern1);
                 Pattern<BaseEvent, BaseEvent> pattern2 = Pattern
                         .<BaseEvent>begin("event1")
                         .where(new SimpleCondition<BaseEvent>() {
@@ -71,11 +71,11 @@ public class Main {
                                 return (float) event.toMap().get("v4") < 0.0;
                             }
                         });
-                referencePatterns.add(pattern2);
+                targetPatterns.add(pattern2);
 
                 // Calculate fitness
                 System.out.println("\n______________________________ Computing fitness... ______________________________\n");
-                double fitness = FitnessCalculator.calculateFitness(env, eventStream, referencePatterns, flinkPattern);
+                double fitness = FitnessCalculator.calculateFitness(env, eventStream, targetPatterns, generatedPattern);
                 System.out.println("Fitness: " + fitness + "%");
             } else {
                 System.out.println("Random Tree generation returned null.");
