@@ -24,8 +24,8 @@ public class Main {
     public static void main(String[] args) {
         try {
             // Paths for CSV and grammar files
-            String datasetDirPath = "Flink-cep-examples-main/src/main/resources/datasets/";
-            String csvFileName = "ithaca-sshd-processed-simple.csv";
+            String datasetDirPath = "Flink-cep-examples-main/src/main/resources/datasets/sources/";
+            String csvFileName = "athena-sshd-processed-simple.csv";
 
             String grammarDirPath = "Flink-cep-examples-main/src/main/resources/grammars/generated/";
             String grammarFileName = "generatedGrammar.bnf";
@@ -53,12 +53,9 @@ public class Main {
                 StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
                 DataStream<BaseEvent> eventStream = CsvFileEventSource.generateEventDataStreamFromCSV(env, csvFilePath);
 
-                // Define reference patterns for fitness calculation using PatternFactory
-                List<Pattern<BaseEvent, ?>> targetPatterns = CEPTargetPatternFactory.createReferencePatterns();
-
                 // Calculate fitness
                 System.out.println("\n______________________________ Computing fitness... ______________________________\n");
-                double fitness = FitnessCalculator.calculateFitness(env, eventStream, targetPatterns, generatedPattern);
+                double fitness = FitnessCalculator.calculateFitness(env, eventStream, generatedPattern);
                 System.out.println("Fitness: " + fitness + "%");
             } else {
                 System.out.println("Random Tree generation returned null.");
