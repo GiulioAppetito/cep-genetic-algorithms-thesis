@@ -1,6 +1,6 @@
 package representation.mappers;
 
-import events.BaseEvent;
+import events.engineering.BaseEvent;
 import org.apache.flink.cep.pattern.Pattern;
 import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import representation.PatternRepresentation;
@@ -11,6 +11,7 @@ import java.util.Map;
 
 public class RepresentationToPatternMapper<E extends BaseEvent> {
 
+    // Converts PatternRepresentation to a Flink Pattern
     public Pattern<E, ?> convert(PatternRepresentation representation) {
         List<PatternRepresentation.Event> events = representation.events();
         Pattern<E, E> flinkPattern = null;
@@ -19,8 +20,8 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
             PatternRepresentation.Event event = events.get(i);
             Pattern<E, E> newPattern = createPatternForEvent(event);
 
+            // Initialize with the first event, otherwise chain the events
             if (flinkPattern == null) {
-                // Set the first event as the starting point
                 flinkPattern = newPattern;
             } else {
                 PatternRepresentation.Event.Concatenator concatenator = events.get(i - 1).concatenator();
@@ -44,10 +45,10 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
         return flinkPattern;
     }
 
+    // Creates a Pattern for a single event, applying any conditions and quantifiers
     private Pattern<E, E> createPatternForEvent(PatternRepresentation.Event event) {
         Pattern<E, E> pattern = Pattern.<E>begin(event.identifier());
 
-        // Handle quantifiers such as oneOrMore, optional, etc.
         if (event.quantifier() instanceof PatternRepresentation.Quantifier.ParamFree quantifier) {
             pattern = switch (quantifier) {
                 case ONE_OR_MORE -> pattern.oneOrMore();
@@ -57,7 +58,7 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
             pattern = pattern.times(nTimes.n());
         }
 
-        // Attach conditions using SimpleCondition
+        // Attach conditions to the pattern
         for (PatternRepresentation.Condition condition : event.conditions()) {
             pattern = pattern.where(new SimpleEventCondition<>(condition));
         }
@@ -65,7 +66,7 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
         return pattern;
     }
 
-    // Inner class for handling SimpleCondition
+    // Inner class to handle conditions in the form of SimpleCondition
     private static class SimpleEventCondition<E extends BaseEvent> extends SimpleCondition<E> {
         private final PatternRepresentation.Condition condition;
 
@@ -75,26 +76,40 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
 
         @Override
         public boolean filter(E value) throws Exception {
-            // Use the toMap() method from BaseEvent to get the field values
             Map<String, Object> eventMap = value.toMap();
-
-            // Get the value of the specified variable from the map
             Object fieldValue = eventMap.get(condition.variable());
 
-            if (fieldValue instanceof Float) {
-                Float variableValue = (Float) fieldValue;
-
-                // Condition check
-                return switch (condition.operator()) {
-                    case EQUAL -> variableValue.equals(condition.value());
-                    case NOT_EQUAL -> !variableValue.equals(condition.value());
-                    case LESS_THAN -> variableValue < condition.value();
-                    case GREATER_THAN -> variableValue > condition.value();
-                };
-            } else {
-                System.out.println("Variable is not a float type or not found: " + fieldValue);
+            // Check if the field value matches the expected type and apply condition
+            if (fieldValue == null) {
+                System.out.println("Variable not found: " + condition.variable());
                 return false;
             }
+
+            switch (condition.operator()) {
+                case EQUAL:
+                    return fieldValue.equals(condition.value());
+
+                case NOT_EQUAL:
+                    return !fieldValue.equals(condition.value());
+
+                case LESS_THAN:
+                    if (fieldValue instanceof Number && condition.value() instanceof Number) {
+                        return ((Number) fieldValue).doubleValue() < ((Number) condition.value()).doubleValue();
+                    }
+                    break;
+
+                case GREATER_THAN:
+                    if (fieldValue instanceof Number && condition.value() instanceof Number) {
+                        return ((Number) fieldValue).doubleValue() > ((Number) condition.value()).doubleValue();
+                    }
+                    break;
+
+                default:
+                    throw new IllegalArgumentException("Unknown operator: " + condition.operator());
+            }
+
+            System.out.println("Unsupported type or operator for value comparison: " + fieldValue);
+            return false;
         }
     }
 }

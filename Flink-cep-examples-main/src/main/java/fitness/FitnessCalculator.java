@@ -1,7 +1,6 @@
-
 package fitness;
 
-import events.BaseEvent;
+import events.engineering.BaseEvent;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternSelectFunction;
 import org.apache.flink.cep.PatternStream;
@@ -20,18 +19,18 @@ public class FitnessCalculator {
             List<Pattern<BaseEvent, ?>> referencePatterns,
             Pattern<BaseEvent, ?> generatedPattern) throws Exception {
 
-        // Find target events from reference patterns
-        Set<Map<String, Object>> targetEvents = collectMatches(inputDataStream, referencePatterns, "Target");
+        // Find target sequences from reference patterns
+        Set<List<Map<String, Object>>> targetSequences = collectSequenceMatches(inputDataStream, referencePatterns, "Target");
 
-        // Find detected events from the generated pattern
-        Set<Map<String, Object>> detectedEvents = collectMatches(inputDataStream, Collections.singletonList(generatedPattern), "Generated");
+        // Find detected sequences from the generated pattern
+        Set<List<Map<String, Object>>> detectedSequences = collectSequenceMatches(inputDataStream, Collections.singletonList(generatedPattern), "Generated");
 
-        // Calculate fitness as the percentage of target events detected
-        return calculateFitnessScore(targetEvents, detectedEvents);
+        // Calculate fitness as the percentage of target sequences detected
+        return calculateFitnessScore(targetSequences, detectedSequences);
     }
 
-    private static Set<Map<String, Object>> collectMatches(DataStream<BaseEvent> inputDataStream, List<Pattern<BaseEvent, ?>> patterns, String type) throws Exception {
-        Set<Map<String, Object>> eventsSet = new HashSet<>();
+    private static Set<List<Map<String, Object>>> collectSequenceMatches(DataStream<BaseEvent> inputDataStream, List<Pattern<BaseEvent, ?>> patterns, String type) throws Exception {
+        Set<List<Map<String, Object>>> sequencesSet = new HashSet<>();
 
         for (Pattern<BaseEvent, ?> pattern : patterns) {
             DataStream<List<BaseEvent>> matchedStream = getMatchedDataStream(inputDataStream, pattern);
@@ -39,14 +38,19 @@ public class FitnessCalculator {
             Iterator<List<BaseEvent>> iterator = DataStreamUtils.collect(matchedStream);
             while (iterator.hasNext()) {
                 List<BaseEvent> eventsList = iterator.next();
+
+                // Convert the list of events into a list of maps for easier comparison
+                List<Map<String, Object>> sequence = new ArrayList<>();
                 for (BaseEvent event : eventsList) {
-                    eventsSet.add(new HashMap<>(event.toMap()));
-                    System.out.println("[" + type + "] " + "match: " + event.toMap());
+                    sequence.add(new HashMap<>(event.toMap()));
                 }
+
+                sequencesSet.add(sequence);
+                System.out.println("[" + type + "] match sequence: " + sequence);
             }
         }
 
-        return eventsSet;
+        return sequencesSet;
     }
 
     private static DataStream<List<BaseEvent>> getMatchedDataStream(DataStream<BaseEvent> inputDataStream, Pattern<BaseEvent, ?> pattern) {
@@ -54,9 +58,9 @@ public class FitnessCalculator {
         return patternStream.select(new PatternToListSelectFunction());
     }
 
-    private static double calculateFitnessScore(Set<Map<String, Object>> targetEvents, Set<Map<String, Object>> detectedEvents) {
-        int targetCount = targetEvents.size();
-        int detectedTargetCount = (int) targetEvents.stream().filter(detectedEvents::contains).count();
+    private static double calculateFitnessScore(Set<List<Map<String, Object>>> targetSequences, Set<List<Map<String, Object>>> detectedSequences) {
+        int targetCount = targetSequences.size();
+        int detectedTargetCount = (int) targetSequences.stream().filter(detectedSequences::contains).count();
         return targetCount == 0 ? 0.0 : (double) detectedTargetCount / targetCount * 100.0;
     }
 

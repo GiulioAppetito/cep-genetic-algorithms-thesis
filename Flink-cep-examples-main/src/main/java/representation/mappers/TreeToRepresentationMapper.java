@@ -18,6 +18,7 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
         List<PatternRepresentation.Event> events = new ArrayList<>();
         PatternRepresentation.WithinClause withinClause = null;
 
+        // Parse the children of the root tree node
         for (Tree<String> child : tree) {
             if ("<events>".equals(child.content())) {
                 events = parseEvents(child); // Parse all events recursively
@@ -25,7 +26,17 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
                 withinClause = parseWithinClause(child); // Parse within clause
             }
         }
-        return new PatternRepresentation(events, withinClause);
+
+        // Log for debugging
+        System.out.println("Parsed Events: " + events);
+        System.out.println("Parsed Within Clause: " + withinClause);
+
+        PatternRepresentation patternRepresentation = new PatternRepresentation(events, withinClause);
+
+        // Validate the integrity between the tree and the PatternRepresentation
+        validatePatternRepresentation(tree, patternRepresentation);
+
+        return patternRepresentation;
     }
 
     /**
@@ -39,7 +50,7 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
             return events;  // Base case for empty node.
         }
 
-        // Parse the first <event>.
+        // Parse the first <event>
         Tree<String> firstEventNode = eventsNode.child(0);
         PatternRepresentation.Event firstEvent = parseSingleEvent(firstEventNode);
         events.add(firstEvent);
@@ -72,7 +83,6 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
         return events;
     }
 
-
     /**
      * <event> ::= <identifier> <conditions> <quantifier>
      * Parses a single event, including its identifier, conditions, and quantifier.
@@ -95,6 +105,11 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
                     break;
             }
         }
+
+        if (identifier == null) {
+            throw new IllegalArgumentException("Event identifier cannot be null");
+        }
+
         return new PatternRepresentation.Event(identifier, conditions, quantifier, null);
     }
 
@@ -143,7 +158,47 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
     }
 
     /**
-     * <eConcat> ::= next | followedBy | followedByAny
+     * Parses a single condition, including its variable, operator, and value.
+     */
+    private PatternRepresentation.Condition parseCondition(Tree<String> conditionNode) {
+        String variable = null;
+        PatternRepresentation.Condition.Operator operator = null;
+        Object value = null;
+
+        for (Tree<String> child : conditionNode) {
+            switch (child.content()) {
+                case "<var>":
+                    variable = child.visitLeaves().get(0);
+                    break;
+                case "<opNum>":
+                case "<opStr>":
+                case "<opBool>":
+                    operator = parseOperator(child);  // Operatore comune per numerico, string e booleano
+                    break;
+                case "<fNum>":
+                    value = parseFNum(child);  // Valori numerici
+                    break;
+                case "<boolean>":
+                    value = parseBooleanValue(child);  // Valori booleani
+                    break;
+                default:
+                    if (child.content().contains("Value")) {
+                        value = parseStringValue(child);  // Valori stringa
+                    } else {
+                        variable = child.visitLeaves().get(0);  // Gestisci come variabile generica
+                    }
+                    break;
+            }
+        }
+
+        if (variable == null || operator == null) {
+            throw new IllegalArgumentException("Condition must have both variable and operator defined");
+        }
+
+        return new PatternRepresentation.Condition(variable, operator, value, null);
+    }
+
+    /**
      * Parses concatenation types between events.
      */
     private PatternRepresentation.Event.Concatenator parseConcatenator(Tree<String> concatNode) {
@@ -157,32 +212,6 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
     }
 
     /**
-     * <condition> ::= <var> <op> <fNum>
-     * Parses a single condition, including its variable, operator, and numeric value.
-     */
-    private PatternRepresentation.Condition parseCondition(Tree<String> conditionNode) {
-        String variable = null;
-        PatternRepresentation.Condition.Operator operator = null;
-        float value = 0.0f;
-
-        for (Tree<String> child : conditionNode) {
-            switch (child.content()) {
-                case "<var>":
-                    variable = child.visitLeaves().get(0);
-                    break;
-                case "<op>":
-                    operator = parseOperator(child);
-                    break;
-                case "<fNum>":
-                    value = parseFNum(child);
-                    break;
-            }
-        }
-        return new PatternRepresentation.Condition(variable, operator, value, null);
-    }
-
-    /**
-     * <cConcat> ::= and | or
      * Parses logical concatenation operators between conditions.
      */
     private PatternRepresentation.Condition.Concatenator parseConditionConcatenator(Tree<String> concatNode) {
@@ -195,7 +224,6 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
     }
 
     /**
-     * <op> ::= equal | notEqual | lt | gt
      * Parses comparison operators within a condition.
      */
     private PatternRepresentation.Condition.Operator parseOperator(Tree<String> opNode) {
@@ -210,7 +238,6 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
     }
 
     /**
-     * <fNum> ::= + <digit> . <digit> <digit> E <digit> | - <digit> . <digit> <digit> E <digit> | + <digit> . <digit> <digit> E - <digit> | - <digit> . <digit> <digit> E - <digit>
      * Parses a floating-point number format with scientific notation.
      */
     private float parseFNum(Tree<String> fNumNode) {
@@ -227,7 +254,21 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
     }
 
     /**
-     * <quantifier> ::= oneOrMore | optional | <iNum>
+     * Parses boolean values.
+     */
+    private boolean parseBooleanValue(Tree<String> boolNode) {
+        String value = boolNode.visitLeaves().get(0);
+        return Boolean.parseBoolean(value);
+    }
+
+    /**
+     * Parses string values.
+     */
+    private String parseStringValue(Tree<String> strNode) {
+        return strNode.visitLeaves().get(0);
+    }
+
+    /**
      * Parses the quantifier that defines event occurrence constraints.
      */
     private PatternRepresentation.Quantifier parseQuantifier(Tree<String> quantifierNode) {
@@ -243,11 +284,34 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
     }
 
     /**
-     * <withinClause> ::= <fNum>
      * Parses the time constraint applied to the event sequence.
      */
     private PatternRepresentation.WithinClause parseWithinClause(Tree<String> withinClauseNode) {
         float duration = parseFNum(withinClauseNode.child(0));
         return new PatternRepresentation.WithinClause(duration);
+    }
+
+    /**
+     * Validates the integrity between the parsed tree and the generated PatternRepresentation.
+     */
+    private void validatePatternRepresentation(Tree<String> tree, PatternRepresentation patternRepresentation) {
+        System.out.println("Validating Pattern Representation...");
+        if (patternRepresentation.events().size() != countEventNodes(tree)) {
+            System.err.println("Mismatch in number of events between Tree and PatternRepresentation.");
+        }
+    }
+
+    /**
+     * Counts the number of <event> nodes in the tree.
+     */
+    private int countEventNodes(Tree<String> tree) {
+        int count = 0;
+        if ("<event>".equals(tree.content())) {
+            count++;
+        }
+        for (Tree<String> child : tree) {
+            count += countEventNodes(child);
+        }
+        return count;
     }
 }

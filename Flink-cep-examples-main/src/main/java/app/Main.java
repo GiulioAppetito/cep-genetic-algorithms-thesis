@@ -1,77 +1,60 @@
 package app;
 
-import events.BaseEvent;
-import events.source.EventSource;
+import cep.CEPTargetPatternFactory;
+import events.engineering.BaseEvent;
+import events.source.CsvFileEventSource;
 import fitness.FitnessCalculator;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.StringGrammar;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.cfggp.GrowGrammarTreeFactory;
 import io.github.ericmedvet.jgea.core.representation.tree.Tree;
 import org.apache.flink.cep.pattern.Pattern;
-import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import representation.PatternRepresentation;
 import representation.mappers.RepresentationToPatternMapper;
 import representation.mappers.TreeToRepresentationMapper;
+import utils.GrammarGenerator;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
         try {
-            // Load Grammar and Generate Random Tree
-            StringGrammar<String> grammar = loadGrammar("/grammars/FlinkCEPGrammar.bnf");
+            // Paths for CSV and grammar files
+            String datasetDirPath = "Flink-cep-examples-main/src/main/resources/datasets/";
+            String csvFileName = "ithaca-sshd-processed-simple.csv";
+
+            String grammarDirPath = "Flink-cep-examples-main/src/main/resources/grammars/generated/";
+            String grammarFileName = "generatedGrammar.bnf";
+
+            String grammarFilePath = grammarDirPath + grammarFileName;
+            String csvFilePath = datasetDirPath + csvFileName;
+
+            // Generate grammar from CSV
+            System.out.println("Generating grammar from CSV...");
+            GrammarGenerator.generateGrammar(csvFilePath, grammarFilePath);
+            System.out.println("Grammar generated at: " + grammarFilePath);
+
+            // Load grammar and generate a random tree
+            StringGrammar<String> grammar = loadGrammar(grammarFilePath);
             Tree<String> randomTree = generateRandomTree(grammar);
 
             if (randomTree != null) {
-                // Convert the Tree to PatternRepresentation
+                // Convert tree to pattern representation
                 PatternRepresentation patternRepresentation = mapTreeToPattern(randomTree);
 
-                // Convert PatternRepresentation to Flink CEP Pattern
+                // Convert pattern representation to Flink CEP pattern
                 Pattern<BaseEvent, ?> generatedPattern = mapPatternRepresentationToFlinkPattern(patternRepresentation);
 
-                // Set Up Flink Environment and Create a DataStream
+                // Set up Flink environment and load events from CSV
                 StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-                int numberOfEvents = 100;
-                DataStream<BaseEvent> eventStream = EventSource.generateHardcodedEventDataStream(env, numberOfEvents);
+                DataStream<BaseEvent> eventStream = CsvFileEventSource.generateEventDataStreamFromCSV(env, csvFilePath);
 
-                // Define reference patterns
-                List<Pattern<BaseEvent, ?>> targetPatterns = new ArrayList<>();
-                Pattern<BaseEvent, BaseEvent> pattern1 = Pattern
-                        .<BaseEvent>begin("event1")
-                        .where(new SimpleCondition<BaseEvent>() {
-                            @Override
-                            public boolean filter(BaseEvent event) {
-                                return (float) event.toMap().get("v1") > 0.0;
-                            }
-                        })
-                        .next("event2")
-                        .where(new SimpleCondition<BaseEvent>() {
-                            @Override
-                            public boolean filter(BaseEvent event) {
-                                return (float) event.toMap().get("v2") < 0.0;
-                            }
-                        });
-                targetPatterns.add(pattern1);
-                Pattern<BaseEvent, BaseEvent> pattern2 = Pattern
-                        .<BaseEvent>begin("event1")
-                        .where(new SimpleCondition<BaseEvent>() {
-                            @Override
-                            public boolean filter(BaseEvent event) {
-                                return (float) event.toMap().get("v3") > 0.0;
-                            }
-                        })
-                        .next("event2")
-                        .where(new SimpleCondition<BaseEvent>() {
-                            @Override
-                            public boolean filter(BaseEvent event) {
-                                return (float) event.toMap().get("v4") < 0.0;
-                            }
-                        });
-                targetPatterns.add(pattern2);
+                // Define reference patterns for fitness calculation using PatternFactory
+                List<Pattern<BaseEvent, ?>> targetPatterns = CEPTargetPatternFactory.createReferencePatterns();
 
                 // Calculate fitness
                 System.out.println("\n______________________________ Computing fitness... ______________________________\n");
@@ -85,20 +68,18 @@ public class Main {
         }
     }
 
-    // Load Grammar from Resource File
-    private static StringGrammar<String> loadGrammar(String resourcePath) throws Exception {
-        InputStream grammarStream = Main.class.getResourceAsStream(resourcePath);
-        assert grammarStream != null;
-        StringGrammar<String> grammar = StringGrammar.load(grammarStream);
-        System.out.println("Loaded Grammar: ");
-        System.out.println(grammar);
-        return grammar;
+    private static StringGrammar<String> loadGrammar(String filePath) throws Exception {
+        try (InputStream grammarStream = new FileInputStream(filePath)) {
+            StringGrammar<String> grammar = StringGrammar.load(grammarStream);
+            System.out.println("Loaded Grammar: ");
+            System.out.println(grammar);
+            return grammar;
+        }
     }
 
-    // Generate Random Tree Using Grammar
     private static Tree<String> generateRandomTree(StringGrammar<String> grammar) {
         int MAX_HEIGHT = 100;
-        int TARGET_DEPTH = 10;
+        int TARGET_DEPTH = 8;
 
         GrowGrammarTreeFactory<String> treeFactory = new GrowGrammarTreeFactory<>(MAX_HEIGHT, grammar);
         Tree<String> randomTree = treeFactory.build(new Random(), TARGET_DEPTH);
@@ -111,7 +92,6 @@ public class Main {
         return randomTree;
     }
 
-    // Convert Tree to PatternRepresentation
     private static PatternRepresentation mapTreeToPattern(Tree<String> randomTree) {
         System.out.println("\n______________________________ Applying pattern mapper... ______________________________");
         TreeToRepresentationMapper toRepresentationMapper = new TreeToRepresentationMapper();
@@ -121,7 +101,6 @@ public class Main {
         return patternRepresentation;
     }
 
-    // Convert PatternRepresentation to Flink CEP Pattern
     private static Pattern<BaseEvent, ?> mapPatternRepresentationToFlinkPattern(PatternRepresentation patternRepresentation) {
         System.out.println("\n______________________________ Converting to Flink Pattern... ______________________________");
         RepresentationToPatternMapper<BaseEvent> toPatternMapper = new RepresentationToPatternMapper<>();

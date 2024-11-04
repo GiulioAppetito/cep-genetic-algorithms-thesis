@@ -1,6 +1,6 @@
 package events.custom;
 
-import events.BaseEvent;
+import events.engineering.BaseEvent;
 
 import java.util.HashMap;
 import java.util.Map;

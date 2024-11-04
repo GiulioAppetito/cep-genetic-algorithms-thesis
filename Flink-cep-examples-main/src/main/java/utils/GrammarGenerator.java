@@ -8,16 +8,20 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringJoiner;
 
 public class GrammarGenerator {
 
     //Generates a grammar based on the structure of a CSV file and writes it to a .bnf file.
     public static void generateGrammar(String csvFilePath, String grammarFilePath) throws IOException {
         // Automatically infer column types and unique values from the CSV file
-        Map<String, String> columnTypes = new HashMap<>();
+        Map<String, String> columnTypes = getColumnTypesFromCSV(csvFilePath);
         Map<String, Set<String>> uniqueStringValues = new HashMap<>();
-        inferColumnTypesAndUniqueValues(csvFilePath, columnTypes, uniqueStringValues);
+        inferUniqueStringValues(csvFilePath, columnTypes, uniqueStringValues);
 
         StringBuilder grammar = new StringBuilder();
 
@@ -53,12 +57,17 @@ public class GrammarGenerator {
         }
         grammar.append(conditionJoiner.toString()).append("\n");
 
+        // Add operator definitions
+        grammar.append("<opNum> ::= equal | notEqual | lt | gt\n");
+        grammar.append("<opStr> ::= equal | notEqual \n");
+        grammar.append("<opBool> ::= equal | notEqual \n");
+
         // Quantifiers for event occurrences
         grammar.append("<quantifier> ::= oneOrMore | optional | <iNum>\n");
 
         // Numeric types
-        grammar.append("<iNum> ::= <digit> | <iNum> <digit>\n");
         grammar.append("<digit> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9\n");
+        grammar.append("<iNum> ::= <digit> | <iNum> <digit>\n");
 
         // Floating-point format
         grammar.append("<fNum> ::= + <digit> . <digit> <digit> E <digit> | - <digit> . <digit> <digit> E <digit> | + <digit> . <digit> <digit> E - <digit> | - <digit> . <digit> <digit> E - <digit>\n");
@@ -87,15 +96,41 @@ public class GrammarGenerator {
         }
     }
 
-    /**
-     * Generates a condition clause for a specific type, allowing only valid operators for that type.
-     * If the type is "string", it includes a dedicated placeholder for unique values in the condition.
-     *
-     * @param column The column name.
-     * @param type The data type of the column (e.g., "int", "float", "boolean", "string").
-     * @param uniqueStringValues A map containing unique values for each string column.
-     * @return A string representing the condition clause for that type.
-     */
+    //Reads the CSV file and infers data types of each column.
+    public static Map<String, String> getColumnTypesFromCSV(String csvFilePath) throws IOException {
+        Map<String, String> columnTypes = new HashMap<>();
+        try (Reader reader = new FileReader(csvFilePath);
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
+
+            for (CSVRecord record : csvParser) {
+                for (String column : record.toMap().keySet()) {
+                    String value = record.get(column);
+                    String inferredType = inferType(value);
+                    columnTypes.putIfAbsent(column, inferredType);
+                }
+                break; // Only need the first row to infer types
+            }
+        }
+        return columnTypes;
+    }
+
+    //Infers the types of columns and collects unique values for string columns in a CSV file.
+    private static void inferUniqueStringValues(String csvFilePath, Map<String, String> columnTypes, Map<String, Set<String>> uniqueStringValues) throws IOException {
+        try (Reader reader = new FileReader(csvFilePath); CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
+            for (CSVRecord record : csvParser) {
+                for (String column : record.toMap().keySet()) {
+                    String value = record.get(column);
+
+                    // Collect unique values for string columns
+                    if ("string".equals(columnTypes.get(column))) {
+                        uniqueStringValues.computeIfAbsent(column, k -> new HashSet<>()).add(value);
+                    }
+                }
+            }
+        }
+    }
+
+    //Generates a condition clause for a specific type, allowing only valid operators for that type.
     private static String generateConditionForType(String column, String type, Map<String, Set<String>> uniqueStringValues) {
         return switch (type) {
             case "int", "float" -> String.format("%s <opNum> <fNum>", column);
@@ -103,26 +138,6 @@ public class GrammarGenerator {
             case "string" -> String.format("%s <opStr> <%sValue>", column, column);
             default -> throw new IllegalArgumentException("Unsupported data type: " + type);
         };
-    }
-
-    //Infers the types of columns and collects unique values for string columns in a CSV file.
-    private static void inferColumnTypesAndUniqueValues(String csvFilePath, Map<String, String> columnTypes, Map<String, Set<String>> uniqueStringValues) throws IOException {
-        try (Reader reader = new FileReader(csvFilePath); CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
-            for (CSVRecord record : csvParser) {
-                for (String column : record.toMap().keySet()) {
-                    String value = record.get(column);
-                    String inferredType = inferType(value);
-
-                    // Add inferred type to columnTypes if not already present
-                    columnTypes.putIfAbsent(column, inferredType);
-
-                    // Collect unique values for string columns
-                    if ("string".equals(inferredType)) {
-                        uniqueStringValues.computeIfAbsent(column, k -> new HashSet<>()).add(value);
-                    }
-                }
-            }
-        }
     }
 
     //Infers the data type of a single CSV field value.
@@ -139,8 +154,8 @@ public class GrammarGenerator {
     }
 
     public static void main(String[] args) {
-        String csvFilePath = "Flink-cep-examples-main/src/main/resources/datasets/prova.csv";
-        String grammarFilePath = "Flink-cep-examples-main/src/main/resources/grammars/generated/generatedGrammar.bnf";
+        String csvFilePath = "Flink-cep-examples-main/src/main/resources/datasets/numericData.csv";  // Specify your CSV file path
+        String grammarFilePath = "Flink-cep-examples-main/src/main/resources/grammars/generated/generatedGrammar.bnf";  // Specify where to save the grammar file
 
         try {
             generateGrammar(csvFilePath, grammarFilePath);

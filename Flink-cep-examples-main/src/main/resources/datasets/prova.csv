@@ -1,7 +1,0 @@
-timestamp,sensor_id,temperature,vibration,speed,alarm_status,location
-1624078090945,S1,75.5,0.02,1500,False,ZoneA
-1624078091945,S2,80.1,0.03,1480,True,ZoneB
-1624078092945,S3,78.3,0.01,1495,False,ZoneA
-1624078093945,S1,76.2,0.04,1502,False,ZoneA
-1624078094945,S2,82.0,0.05,1478,True,ZoneB
-1624078095945,S3,77.8,0.02,1501,False,ZoneA

@@ -69,7 +69,7 @@ public record PatternRepresentation(
     public record Condition(
             String variable,
             Operator operator,
-            float value,
+            Object value,
             Concatenator concatenator
     ) implements Serializable {
         @Override
