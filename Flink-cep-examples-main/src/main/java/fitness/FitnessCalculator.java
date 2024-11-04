@@ -9,7 +9,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamUtils;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
-import java.io.FileWriter;
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
@@ -17,10 +17,7 @@ public class FitnessCalculator {
 
     private static final String TARGET_DATASET_PATH = "Flink-cep-examples-main/src/main/resources/datasets/target/targetDataset.csv";
 
-    public static double calculateFitness(
-            StreamExecutionEnvironment env,
-            DataStream<BaseEvent> inputDataStream,
-            Pattern<BaseEvent, ?> generatedPattern) throws Exception {
+    public static double calculateFitness(StreamExecutionEnvironment env, DataStream<BaseEvent> inputDataStream, Pattern<BaseEvent, ?> generatedPattern) throws Exception {
 
         // Read target sequences from file (precomputed target matches)
         Set<List<Map<String, Object>>> loadedTargetSequences = readTargetSequencesFromFile(TARGET_DATASET_PATH);
@@ -34,7 +31,7 @@ public class FitnessCalculator {
 
     private static Set<List<Map<String, Object>>> readTargetSequencesFromFile(String filePath) {
         Set<List<Map<String, Object>>> sequences = new HashSet<>();
-        try (Scanner scanner = new Scanner(new java.io.File(filePath))) {
+        try (Scanner scanner = new Scanner(new File(filePath))) {
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
                 sequences.add(parseCsvLineToSequence(line));
@@ -49,26 +46,32 @@ public class FitnessCalculator {
         List<Map<String, Object>> sequence = new ArrayList<>();
         String[] eventStrings = line.split("\\|");
         for (String eventString : eventStrings) {
-            eventString = eventString.replace("{", "").replace("}", "").replace(";", ",");
-            String[] keyValuePairs = eventString.split(",");
             Map<String, Object> eventMap = new HashMap<>();
+            String[] keyValuePairs = eventString.replace("{", "").replace("}", "").replace(";", ",").split(",");
             for (String pair : keyValuePairs) {
                 String[] keyValue = pair.split("=");
                 if (keyValue.length == 2) {
                     String key = keyValue[0].trim();
                     String value = keyValue[1].trim();
-                    if ("successful_login".equals(key)) {
-                        eventMap.put(key, Boolean.parseBoolean(value));
-                    } else if ("timestamp".equals(key)) {
-                        eventMap.put(key, Long.parseLong(value));
-                    } else {
-                        eventMap.put(key, value);
-                    }
+                    eventMap.put(key, inferValueType(value));
                 }
             }
             sequence.add(eventMap);
         }
         return sequence;
+    }
+
+    // Function to infer the type of the value: boolean, long, or string
+    private static Object inferValueType(String value) {
+        if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
+            return Boolean.parseBoolean(value);
+        }
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            // Not a long, continue checking other types
+        }
+        return value; // Default to string if no other type matches
     }
 
     private static Set<List<Map<String, Object>>> collectSequenceMatches(DataStream<BaseEvent> inputDataStream, List<Pattern<BaseEvent, ?>> patterns, String type) throws Exception {
@@ -79,14 +82,10 @@ public class FitnessCalculator {
 
             Iterator<List<BaseEvent>> iterator = DataStreamUtils.collect(matchedStream);
             while (iterator.hasNext()) {
-                List<BaseEvent> eventsList = iterator.next();
-
-                // Convert the list of events into a list of maps for easier comparison
                 List<Map<String, Object>> sequence = new ArrayList<>();
-                for (BaseEvent event : eventsList) {
+                for (BaseEvent event : iterator.next()) {
                     sequence.add(new HashMap<>(event.toMap()));
                 }
-
                 sequencesSet.add(sequence);
                 System.out.println("[" + type + "] match sequence: " + sequence);
             }
@@ -101,9 +100,8 @@ public class FitnessCalculator {
     }
 
     private static double calculateFitnessScore(Set<List<Map<String, Object>>> targetSequences, Set<List<Map<String, Object>>> detectedSequences) {
-        int targetCount = targetSequences.size();
-        int detectedTargetCount = (int) targetSequences.stream().filter(targetSeq -> detectedSequences.stream().anyMatch(detectedSeq -> compareSequences(targetSeq, detectedSeq))).count();
-        return targetCount == 0 ? 0.0 : (double) detectedTargetCount / targetCount * 100.0;
+        long detectedTargetCount = targetSequences.stream().filter(targetSeq -> detectedSequences.stream().anyMatch(detectedSeq -> compareSequences(targetSeq, detectedSeq))).count();
+        return targetSequences.isEmpty() ? 0.0 : (double) detectedTargetCount / targetSequences.size() * 100.0;
     }
 
     private static boolean compareSequences(List<Map<String, Object>> seq1, List<Map<String, Object>> seq2) {
