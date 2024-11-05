@@ -21,7 +21,7 @@ This project utilizes genetic algorithms to generate and optimize event patterns
 1. Clone the repository and navigate to the project directory:
    
    ```bash
-   git clone https://github.com/yourusername/cep-genetic-algorithms.git
+   git clone https://github.com/GiulioAppetito/cep-genetic-algorithms-thesis.git
    cd cep-genetic-algorithms
    ```
 
