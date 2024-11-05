@@ -1,6 +1,6 @@
 package fitness;
 
-import events.engineering.BaseEvent;
+import events.BaseEvent;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternSelectFunction;
 import org.apache.flink.cep.PatternStream;

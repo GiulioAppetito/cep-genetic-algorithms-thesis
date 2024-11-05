@@ -1,7 +1,6 @@
 package app;
 
-import cep.CEPTargetPatternFactory;
-import events.engineering.BaseEvent;
+import events.BaseEvent;
 import events.source.CsvFileEventSource;
 import fitness.FitnessCalculator;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.StringGrammar;
@@ -16,19 +15,24 @@ import representation.mappers.TreeToRepresentationMapper;
 import utils.GrammarGenerator;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.util.List;
+import java.util.Properties;
 import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
         try {
-            // Paths for CSV and grammar files
-            String datasetDirPath = "Flink-cep-examples-main/src/main/resources/datasets/sources/";
-            String csvFileName = "athena-sshd-processed-simple.csv";
+            // Load configuration properties from config.properties file
+            Properties config = loadConfig("config.properties");
 
-            String grammarDirPath = "Flink-cep-examples-main/src/main/resources/grammars/generated/";
-            String grammarFileName = "generatedGrammar.bnf";
+            // Paths for CSV and grammar files
+            String datasetDirPath = config.getProperty("datasetDirPath");
+            String csvFileName = config.getProperty("csvFileName");
+            String grammarDirPath = config.getProperty("grammarDirPath");
+            String grammarFileName = config.getProperty("grammarFileName");
+            int MAX_HEIGHT = Integer.parseInt(config.getProperty("MAX_HEIGHT"));
+            int TARGET_DEPTH = Integer.parseInt(config.getProperty("TARGET_DEPTH"));
 
             String grammarFilePath = grammarDirPath + grammarFileName;
             String csvFilePath = datasetDirPath + csvFileName;
@@ -40,7 +44,7 @@ public class Main {
 
             // Load grammar and generate a random tree
             StringGrammar<String> grammar = loadGrammar(grammarFilePath);
-            Tree<String> randomTree = generateRandomTree(grammar);
+            Tree<String> randomTree = generateRandomTree(grammar, MAX_HEIGHT, TARGET_DEPTH);
 
             if (randomTree != null) {
                 // Convert tree to pattern representation
@@ -65,24 +69,35 @@ public class Main {
         }
     }
 
+    private static Properties loadConfig(String filePath) throws Exception {
+        Properties config = new Properties();
+        try (InputStream input = Main.class.getClassLoader().getResourceAsStream(filePath)) {
+            if (input == null) {
+                throw new FileNotFoundException("Configuration file not found: " + filePath);
+            }
+            config.load(input);
+        }
+        return config;
+    }
+
     private static StringGrammar<String> loadGrammar(String filePath) throws Exception {
+        System.out.println("\n______________________________ Loading grammar... ______________________________");
         try (InputStream grammarStream = new FileInputStream(filePath)) {
             StringGrammar<String> grammar = StringGrammar.load(grammarStream);
-            System.out.println("Loaded Grammar: ");
+            System.out.println("\nLoaded Grammar:\n ");
             System.out.println(grammar);
             return grammar;
         }
     }
 
-    private static Tree<String> generateRandomTree(StringGrammar<String> grammar) {
-        int MAX_HEIGHT = 100;
-        int TARGET_DEPTH = 8;
+    private static Tree<String> generateRandomTree(StringGrammar<String> grammar, int maxHeight, int targetDepth) {
+        System.out.println("\n______________________________ Generating random tree from grammar... ______________________________\n");
 
-        GrowGrammarTreeFactory<String> treeFactory = new GrowGrammarTreeFactory<>(MAX_HEIGHT, grammar);
-        Tree<String> randomTree = treeFactory.build(new Random(), TARGET_DEPTH);
+        GrowGrammarTreeFactory<String> treeFactory = new GrowGrammarTreeFactory<>(maxHeight, grammar);
+        Tree<String> randomTree = treeFactory.build(new Random(), targetDepth);
 
         if (randomTree != null) {
-            System.out.println("JGEA Generated Random Tree:");
+            System.out.println("JGEA Generated Random Tree:\n");
             randomTree.prettyPrint(System.out);
         }
 
@@ -90,7 +105,7 @@ public class Main {
     }
 
     private static PatternRepresentation mapTreeToPattern(Tree<String> randomTree) {
-        System.out.println("\n______________________________ Applying pattern mapper... ______________________________");
+        System.out.println("\n______________________________ Applying pattern mapper... ______________________________\n");
         TreeToRepresentationMapper toRepresentationMapper = new TreeToRepresentationMapper();
         PatternRepresentation patternRepresentation = toRepresentationMapper.apply(randomTree);
         System.out.println("\nMapped PatternRepresentation:\n");

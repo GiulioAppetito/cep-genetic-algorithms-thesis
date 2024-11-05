@@ -1,6 +1,6 @@
 package representation.mappers;
 
-import events.engineering.BaseEvent;
+import events.BaseEvent;
 import org.apache.flink.cep.pattern.Pattern;
 import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import representation.PatternRepresentation;

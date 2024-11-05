@@ -1,13 +1,13 @@
 package events.source;
 
-import events.engineering.BaseEvent;
-import events.engineering.GenericEvent;
-import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import events.BaseEvent;
+import events.GenericEvent;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import utils.GrammarGenerator;
 
 import java.io.FileReader;
@@ -24,8 +24,7 @@ public class CsvFileEventSource {
         try {
             Map<String, String> columnTypes = GrammarGenerator.getColumnTypesFromCSV(csvFilePath);
 
-            try (Reader reader = new FileReader(csvFilePath);
-                 CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
+            try (Reader reader = new FileReader(csvFilePath); CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
 
                 for (CSVRecord record : csvParser) {
                     Long timestamp;
@@ -77,10 +76,6 @@ public class CsvFileEventSource {
             throw new IllegalArgumentException("Event list is empty. Ensure the CSV file is not empty and has correct data.");
         }
 
-        return env.fromCollection(events)
-                .assignTimestampsAndWatermarks(
-                        WatermarkStrategy.<BaseEvent>forMonotonousTimestamps()
-                                .withTimestampAssigner((event, timestamp) -> event.getTimestamp())
-                );
+        return env.fromCollection(events).assignTimestampsAndWatermarks(WatermarkStrategy.<BaseEvent>forMonotonousTimestamps().withTimestampAssigner((event, timestamp) -> event.getTimestamp()));
     }
 }

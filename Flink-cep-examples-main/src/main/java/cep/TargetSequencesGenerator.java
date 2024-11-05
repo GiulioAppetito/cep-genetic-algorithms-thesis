@@ -1,6 +1,6 @@
 package cep;
 
-import events.engineering.BaseEvent;
+import events.BaseEvent;
 import events.source.CsvFileEventSource;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternSelectFunction;
@@ -11,81 +11,27 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamUtils;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
-public class CEPTargetPatternFactory {
+public class TargetSequencesGenerator {
 
-    private static final String targetDatasetPath = "Flink-cep-examples-main/src/main/resources/datasets/target/targetDataset.csv";
+    private static String targetDatasetPath;
 
     public static List<Pattern<BaseEvent, ?>> createTargetPatterns() {
         List<Pattern<BaseEvent, ?>> targetPatterns = new ArrayList<>();
 
-        // Pattern 1: Successful login event from any IP
         Pattern<BaseEvent, BaseEvent> pattern1 = Pattern
                 .<BaseEvent>begin("event1")
                 .where(new SimpleCondition<BaseEvent>() {
                     @Override
                     public boolean filter(BaseEvent event) {
-                        Object successfulLogin = event.toMap().get("successful_login");
-                        return successfulLogin instanceof Boolean && (Boolean) successfulLogin;
+                        Object sensor_id = event.toMap().get("sensor_id");
+                        return sensor_id.equals("SENSOR_010");
                     }
                 });
 
         targetPatterns.add(pattern1);
-
-        // Pattern 2: Two consecutive successful login events from the same IP address
-        Pattern<BaseEvent, BaseEvent> pattern2 = Pattern
-                .<BaseEvent>begin("event1")
-                .where(new SimpleCondition<BaseEvent>() {
-                    @Override
-                    public boolean filter(BaseEvent event) {
-                        Object ipAddress = event.toMap().get("ip_address");
-                        Object successfulLogin = event.toMap().get("successful_login");
-                        return "129.16.0.5".equals(ipAddress) &&
-                                successfulLogin instanceof Boolean && (Boolean) successfulLogin;
-                    }
-                })
-                .next("event2")
-                .where(new SimpleCondition<BaseEvent>() {
-                    @Override
-                    public boolean filter(BaseEvent event) {
-                        Object successfulLogin = event.toMap().get("successful_login");
-                        return successfulLogin instanceof Boolean && (Boolean) successfulLogin;
-                    }
-                });
-
-        targetPatterns.add(pattern2);
-
-        // Pattern 3: Sequence of three successful login events
-        Pattern<BaseEvent, BaseEvent> pattern3 = Pattern
-                .<BaseEvent>begin("event1")
-                .where(new SimpleCondition<BaseEvent>() {
-                    @Override
-                    public boolean filter(BaseEvent event) {
-                        Object successfulLogin = event.toMap().get("successful_login");
-                        return successfulLogin instanceof Boolean && (Boolean) successfulLogin;
-                    }
-                })
-                .followedBy("event2")
-                .where(new SimpleCondition<BaseEvent>() {
-                    @Override
-                    public boolean filter(BaseEvent event) {
-                        Object successfulLogin = event.toMap().get("successful_login");
-                        return successfulLogin instanceof Boolean && (Boolean) successfulLogin;
-                    }
-                })
-                .followedBy("event3")
-                .where(new SimpleCondition<BaseEvent>() {
-                    @Override
-                    public boolean filter(BaseEvent event) {
-                        Object successfulLogin = event.toMap().get("successful_login");
-                        return successfulLogin instanceof Boolean && (Boolean) successfulLogin;
-                    }
-                });
-
-        targetPatterns.add(pattern3);
 
         return targetPatterns;
     }
@@ -139,16 +85,33 @@ public class CEPTargetPatternFactory {
     }
 
     public static void main(String[] args) throws Exception {
-        List<Pattern<BaseEvent, ?>> targetPatterns = createTargetPatterns();
+        // Load configuration properties from config.properties file
+        Properties config = loadConfig("config.properties");
 
-        String datasetDirPath = "Flink-cep-examples-main/src/main/resources/datasets/sources/";
-        String csvFileName = "athena-sshd-processed-simple.csv";
+        // Read paths from the configuration
+        String datasetDirPath = config.getProperty("datasetDirPath");
+        String csvFileName = config.getProperty("csvFileName");
+        targetDatasetPath = config.getProperty("targetDatasetPath", "Flink-cep-examples-main/src/main/resources/datasets/target/targetDataset.csv");
+
         String csvFilePath = datasetDirPath + csvFileName;
 
         // Set up Flink environment and load events from CSV
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         DataStream<BaseEvent> eventStream = CsvFileEventSource.generateEventDataStreamFromCSV(env, csvFilePath);
 
+        // Create target patterns and save matches to a file
+        List<Pattern<BaseEvent, ?>> targetPatterns = createTargetPatterns();
         saveMatchesToFile(targetPatterns, eventStream);
+    }
+
+    private static Properties loadConfig(String filePath) throws Exception {
+        Properties config = new Properties();
+        try (InputStream input = TargetSequencesGenerator.class.getClassLoader().getResourceAsStream(filePath)) {
+            if (input == null) {
+                throw new FileNotFoundException("Configuration file not found: " + filePath);
+            }
+            config.load(input);
+        }
+        return config;
     }
 }

@@ -1,4 +1,4 @@
-package events.engineering;
+package events;
 
 import java.util.HashMap;
 import java.util.Map;
