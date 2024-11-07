@@ -1,20 +1,12 @@
-# Flink CEP Patter generation with Genetic Algorithms
-This project leverages Apache Flink's Complex Event Processing (CEP) library for real-time event pattern detection, coupled with genetic algorithms to optimize these patterns. The main goal is to allow users to define, apply, and evolve event patterns for data stream analysis.
+# Complex Event Processing with Genetic Algorithms
 
-## Features
-
-- **Pattern Grammar**: Define flexible event patterns with quantifiers, concatenators, and conditions.
-- **Pattern Representation**: Model patterns in Java through the `PatternRepresentation` class, including:
-  - **Events**: Defined by identifiers, conditions, and quantifiers.
-  - **Conditions**: Specify attributes to filter events.
-  - **Within Clause**: Set a maximum time window for matching sequences.
-- **CEP Integration**: Convert pattern representations to Apache Flink patterns and apply them to data streams.
-- **Genetic Algorithm Optimization**: Use genetic algorithms to evolve and optimize pattern detection.
+This project utilizes genetic algorithms to generate and optimize event patterns for real-time streaming data using Apache Flink. The system enables the creation of custom event patterns, transformation of patterns into Flink-compatible rules, and the evaluation of how well detected patterns match predefined target sequences.
 
 ## Project Structure
-
-- **Pattern Grammar**: Defines a grammar for creating event patterns in a tree structure.
-- **TreeToRepresentationMapper**: Maps tree-based patterns to the `PatternRepresentation` Java model.
-- **RepresentationToPatternMapper**: Converts `PatternRepresentation` objects to Apache Flink `Pattern` objects.
-- **Flink CEP Integration**: Uses the `Pattern` API to apply patterns on data streams and trigger alerts on pattern matches.
-- **Genetic Algorithm (jGEA)**: Optimizes patterns based on user-defined fitness functions.
+- **`app.Main`**: Main entry point; generates grammar, creates patterns, and calculates fitness.
+- **`cep.TargetSequencesGenerator`**: Generates target event sequences for testing and evaluation.
+- **`events.source.CsvFileEventSource`**: Loads events from a CSV file and represents them as a Flink DataStream.
+- **`fitness.FitnessCalculator`**: Evaluates the fitness of patterns by comparing detected sequences against target sequences.
+- **`representation.PatternRepresentation`**: Defines the event pattern structure used by the genetic algorithm.
+- **`representation.mappers.TreeToRepresentationMapper`**: Maps grammar trees to structured event patterns.
+- **`utils.GrammarGenerator`**: Generates a grammar file based on the CSV data structure for pattern creation.
