@@ -26,8 +26,8 @@ public class TargetSequencesGenerator {
                 .where(new SimpleCondition<BaseEvent>() {
                     @Override
                     public boolean filter(BaseEvent event) {
-                        Object sensor_id = event.toMap().get("sensor_id");
-                        return sensor_id.equals("SENSOR_010");
+                        Object alarm_status = event.toMap().get("alarm_status");
+                        return alarm_status.equals(true);
                     }
                 });
 

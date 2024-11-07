@@ -96,23 +96,34 @@ public class GrammarGenerator {
         }
     }
 
-    //Reads the CSV file and infers data types of each column.
+    //Read the CSV file and infer data types of each column
     public static Map<String, String> getColumnTypesFromCSV(String csvFilePath) throws IOException {
         Map<String, String> columnTypes = new HashMap<>();
         try (Reader reader = new FileReader(csvFilePath);
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
 
+            // Iterate through each record in the CSV file
             for (CSVRecord record : csvParser) {
+                // For each column in the current record
                 for (String column : record.toMap().keySet()) {
                     String value = record.get(column);
-                    String inferredType = inferType(value);
-                    columnTypes.putIfAbsent(column, inferredType);
+                    String currentType = inferType(value);
+
+                    // Add or update the type for each column based on its values
+                    columnTypes.merge(column, currentType, (existingType, newType) -> {
+                        // If existing type is 'int' but new type is 'float', upgrade to 'float'
+                        if (existingType.equals("int") && newType.equals("float")) {
+                            return "float";
+                        }
+                        // If types conflict and cannot be combined, set to 'string' as fallback
+                        return existingType.equals(newType) ? existingType : "string";
+                    });
                 }
-                break; // Only need the first row to infer types
             }
         }
         return columnTypes;
     }
+
 
     //Infers the types of columns and collects unique values for string columns in a CSV file.
     private static void inferUniqueStringValues(String csvFilePath, Map<String, String> columnTypes, Map<String, Set<String>> uniqueStringValues) throws IOException {

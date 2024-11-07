@@ -69,7 +69,7 @@ public class Main {
         }
     }
 
-    private static Properties loadConfig(String filePath) throws Exception {
+    public static Properties loadConfig(String filePath) throws Exception {
         Properties config = new Properties();
         try (InputStream input = Main.class.getClassLoader().getResourceAsStream(filePath)) {
             if (input == null) {

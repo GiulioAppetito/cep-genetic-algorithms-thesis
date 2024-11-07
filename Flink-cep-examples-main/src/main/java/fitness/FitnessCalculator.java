@@ -13,11 +13,17 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+import static app.Main.loadConfig;
+
 public class FitnessCalculator {
 
-    private static final String TARGET_DATASET_PATH = "Flink-cep-examples-main/src/main/resources/datasets/target/targetDataset.csv";
-
     public static double calculateFitness(StreamExecutionEnvironment env, DataStream<BaseEvent> inputDataStream, Pattern<BaseEvent, ?> generatedPattern) throws Exception {
+
+        // Load configuration properties from config.properties file
+        Properties config = loadConfig("config.properties");
+
+        // Path for CSV
+        String TARGET_DATASET_PATH = config.getProperty("targetDatasetPath");
 
         // Read target sequences from file (precomputed target matches)
         Set<List<Map<String, Object>>> loadedTargetSequences = readTargetSequencesFromFile(TARGET_DATASET_PATH);
@@ -61,7 +67,7 @@ public class FitnessCalculator {
         return sequence;
     }
 
-    // Function to infer the type of the value: boolean, long, or string
+    // Infer the type of the value: boolean, long, or string
     private static Object inferValueType(String value) {
         if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
             return Boolean.parseBoolean(value);
