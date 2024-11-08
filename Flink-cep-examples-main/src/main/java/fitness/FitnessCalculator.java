@@ -35,7 +35,7 @@ public class FitnessCalculator {
         return calculateFitnessScore(loadedTargetSequences, detectedSequences);
     }
 
-    private static Set<List<Map<String, Object>>> readTargetSequencesFromFile(String filePath) {
+    public static Set<List<Map<String, Object>>> readTargetSequencesFromFile(String filePath) {
         Set<List<Map<String, Object>>> sequences = new HashSet<>();
         try (Scanner scanner = new Scanner(new File(filePath))) {
             while (scanner.hasNextLine()) {
@@ -48,7 +48,7 @@ public class FitnessCalculator {
         return sequences;
     }
 
-    private static List<Map<String, Object>> parseCsvLineToSequence(String line) {
+    public static List<Map<String, Object>> parseCsvLineToSequence(String line) {
         List<Map<String, Object>> sequence = new ArrayList<>();
         String[] eventStrings = line.split("\\|");
         for (String eventString : eventStrings) {
@@ -68,7 +68,7 @@ public class FitnessCalculator {
     }
 
     // Infer the type of the value: boolean, long, or string
-    private static Object inferValueType(String value) {
+    public static Object inferValueType(String value) {
         if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
             return Boolean.parseBoolean(value);
         }
@@ -80,7 +80,7 @@ public class FitnessCalculator {
         return value; // Default to string if no other type matches
     }
 
-    private static Set<List<Map<String, Object>>> collectSequenceMatches(DataStream<BaseEvent> inputDataStream, List<Pattern<BaseEvent, ?>> patterns, String type) throws Exception {
+    public static Set<List<Map<String, Object>>> collectSequenceMatches(DataStream<BaseEvent> inputDataStream, List<Pattern<BaseEvent, ?>> patterns, String type) throws Exception {
         Set<List<Map<String, Object>>> sequencesSet = new HashSet<>();
 
         for (Pattern<BaseEvent, ?> pattern : patterns) {
@@ -100,17 +100,17 @@ public class FitnessCalculator {
         return sequencesSet;
     }
 
-    private static DataStream<List<BaseEvent>> getMatchedDataStream(DataStream<BaseEvent> inputDataStream, Pattern<BaseEvent, ?> pattern) {
+    public static DataStream<List<BaseEvent>> getMatchedDataStream(DataStream<BaseEvent> inputDataStream, Pattern<BaseEvent, ?> pattern) {
         PatternStream<BaseEvent> patternStream = CEP.pattern(inputDataStream, pattern);
         return patternStream.select(new PatternToListSelectFunction());
     }
 
-    private static double calculateFitnessScore(Set<List<Map<String, Object>>> targetSequences, Set<List<Map<String, Object>>> detectedSequences) {
+    public static double calculateFitnessScore(Set<List<Map<String, Object>>> targetSequences, Set<List<Map<String, Object>>> detectedSequences) {
         long detectedTargetCount = targetSequences.stream().filter(targetSeq -> detectedSequences.stream().anyMatch(detectedSeq -> compareSequences(targetSeq, detectedSeq))).count();
         return targetSequences.isEmpty() ? 0.0 : (double) detectedTargetCount / targetSequences.size() * 100.0;
     }
 
-    private static boolean compareSequences(List<Map<String, Object>> seq1, List<Map<String, Object>> seq2) {
+    public static boolean compareSequences(List<Map<String, Object>> seq1, List<Map<String, Object>> seq2) {
         if (seq1.size() != seq2.size()) {
             return false;
         }
@@ -122,7 +122,7 @@ public class FitnessCalculator {
         return true;
     }
 
-    private static String canonicalizeMap(Map<String, Object> map) {
+    public static String canonicalizeMap(Map<String, Object> map) {
         return map.entrySet()
                 .stream()
                 .sorted(Map.Entry.comparingByKey())
@@ -131,7 +131,7 @@ public class FitnessCalculator {
                 .orElse("");
     }
 
-    private static class PatternToListSelectFunction implements PatternSelectFunction<BaseEvent, List<BaseEvent>> {
+    public static class PatternToListSelectFunction implements PatternSelectFunction<BaseEvent, List<BaseEvent>> {
         @Override
         public List<BaseEvent> select(Map<String, List<BaseEvent>> match) {
             List<BaseEvent> collectedEvents = new ArrayList<>();
