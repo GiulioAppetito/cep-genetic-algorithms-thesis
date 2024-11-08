@@ -17,58 +17,54 @@ import utils.GrammarGenerator;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 public class PatternInferenceProblem implements GrammarBasedProblem<String, PatternRepresentation>, TotalOrderQualityBasedProblem<PatternRepresentation, Double> {
-    private final String filePath;
-    private final Set<Pattern<BaseEvent, ?>> truePatterns; // True patterns to match against
+    private final Set<Pattern<BaseEvent, ?>> truePatterns;
     private final Set<List<Map<String, Object>>> targetExtractions;
-    private final StreamExecutionEnvironment env;
     private final DataStream<BaseEvent> eventStream;
     private final StringGrammar<String> grammar;
 
-    public PatternInferenceProblem(String filePath, Set<Pattern<BaseEvent, ?>> truePatterns) throws Exception {
-        this.filePath = filePath;
+    public PatternInferenceProblem(String configPath, Set<Pattern<BaseEvent, ?>> truePatterns) throws Exception {
         this.truePatterns = truePatterns;
 
         // Load configuration
-        Properties config = loadConfig("config.properties");
+        Properties config = loadConfig(configPath);
         String datasetDirPath = config.getProperty("datasetDirPath");
         String csvFilePath = datasetDirPath + config.getProperty("csvFileName");
 
         // Initialize Flink environment and load events from CSV
-        this.env = StreamExecutionEnvironment.getExecutionEnvironment();
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         this.eventStream = CsvFileEventSource.generateEventDataStreamFromCSV(env, csvFilePath);
 
         // Read target sequences for fitness evaluation
         String targetDatasetPath = config.getProperty("targetDatasetPath");
         this.targetExtractions = FitnessCalculator.readTargetSequencesFromFile(targetDatasetPath);
 
-        // Load grammar
-        this.grammar = loadGrammar(filePath);
+        // Generate and load grammar from CSV
+        String grammarFilePath = config.getProperty("grammarDirPath") + config.getProperty("grammarFileName");
+        GrammarGenerator.generateGrammar(csvFilePath, grammarFilePath);
+        this.grammar = loadGrammar(grammarFilePath);
     }
 
     @Override
     public Comparator<Double> totalOrderComparator() {
-        return Double::compare;
+        return (v1, v2) -> Double.compare(v2, v1);
     }
 
     @Override
     public Function<PatternRepresentation, Double> qualityFunction() {
-        return patternRepresentation -> {
+        return pr -> {
             try {
-                // Convert PatternRepresentation to Flink pattern
-                Pattern<BaseEvent, ?> generatedPattern = new RepresentationToPatternMapper<BaseEvent>().convert(patternRepresentation);
+                // Transform PatternRepresentation object into a Flink CEP Pattern
+                Pattern<BaseEvent, ?> generatedPattern = new RepresentationToPatternMapper<BaseEvent>().convert(pr);
 
-                // Use existing FitnessCalculator methods
+                // Find the extracted events by applying pr on the DataStream field
                 Set<List<Map<String, Object>>> detectedSequences = FitnessCalculator.collectSequenceMatches(eventStream, List.of(generatedPattern), "Generated");
-                return FitnessCalculator.calculateFitnessScore(targetExtractions, detectedSequences);
 
+                // Compute fitness by comparing the extracted events with the targetExtractions
+                return FitnessCalculator.calculateFitnessScore(targetExtractions, detectedSequences);
             } catch (Exception e) {
                 e.printStackTrace();
                 return 0.0;
@@ -83,7 +79,6 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
 
     @Override
     public Function<Tree<String>, PatternRepresentation> getSolutionMapper() {
-        // Returns a solution mapper that converts a tree to a pattern representation
         return new TreeToRepresentationMapper();
     }
 
