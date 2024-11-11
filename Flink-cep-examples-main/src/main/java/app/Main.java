@@ -3,6 +3,7 @@ package app;
 import events.BaseEvent;
 import events.source.CsvFileEventSource;
 import fitness.FitnessCalculator;
+import grammar.GrammarGenerator;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.StringGrammar;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.cfggp.GrowGrammarTreeFactory;
 import io.github.ericmedvet.jgea.core.representation.tree.Tree;
@@ -12,7 +13,6 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import representation.PatternRepresentation;
 import representation.mappers.RepresentationToPatternMapper;
 import representation.mappers.TreeToRepresentationMapper;
-import utils.GrammarGenerator;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -99,6 +99,7 @@ public class Main {
             return grammar;
         }
     }
+
 
     // Generates a random tree structure based on the provided grammar
     private static Tree<String> generateRandomTree(StringGrammar<String> grammar, int maxHeight, int targetDepth) {

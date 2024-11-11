@@ -16,7 +16,7 @@ This project utilizes genetic algorithms to generate and optimize event patterns
 
 - **fitness.FitnessScoreCalculator**: Calculates the fitness score by comparing detected sequences (generated patterns) against predefined target sequences. Responsible for the scoring logic to determine how well a generated pattern aligns with target patterns.
 
-- **fitness.utils.EventParser**: Provides helper methods to parse event sequences, convert data formats, and handle any CSV-based sequence parsing required by `FitnessCalculator`.
+- **fitness.grammar.EventParser**: Provides helper methods to parse event sequences, convert data formats, and handle any CSV-based sequence parsing required by `FitnessCalculator`.
 
 - **representation.PatternRepresentation**: Defines the event pattern structure used by the genetic algorithm, including event attributes, conditions, and quantifiers.
 
@@ -24,5 +24,5 @@ This project utilizes genetic algorithms to generate and optimize event patterns
 
 - **representation.mappers.TreeToRepresentationMapper**: Maps grammar trees to structured event patterns, translating a `Tree<String>` representation of grammar elements into a `PatternRepresentation` used in pattern creation.
 
-- **utils.GrammarGenerator**: Generates a grammar file based on the CSV data structure for pattern creation. Analyzes the CSV schema and produces a BNF grammar file to guide the genetic algorithm in generating valid event patterns.
+- **grammar.GrammarGenerator**: Generates a grammar file based on the CSV data structure for pattern creation. Analyzes the CSV schema and produces a BNF grammar file to guide the genetic algorithm in generating valid event patterns.
 

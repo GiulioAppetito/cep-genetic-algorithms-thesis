@@ -15,7 +15,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import representation.PatternRepresentation;
 import representation.mappers.RepresentationToPatternMapper;
 import representation.mappers.TreeToRepresentationMapper;
-import utils.GrammarGenerator;
+import grammar.GrammarGenerator;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
