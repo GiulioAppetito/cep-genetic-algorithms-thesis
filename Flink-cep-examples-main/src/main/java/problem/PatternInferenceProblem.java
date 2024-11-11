@@ -28,10 +28,10 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
     private final StringGrammar<String> grammar;
 
     public PatternInferenceProblem(String configPath) throws Exception {
-        // Load configuration properties
+        // Load configuration properties with path validation
         Properties config = loadConfig(configPath);
-        String datasetDirPath = config.getProperty("datasetDirPath");
-        String csvFilePath = datasetDirPath + config.getProperty("csvFileName");
+        String datasetDirPath = getRequiredProperty(config, "datasetDirPath");
+        String csvFilePath = datasetDirPath + getRequiredProperty(config, "csvFileName");
 
         // Initialize Flink environment and load events from CSV
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -39,11 +39,11 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
 
         // Load target sequences for fitness evaluation
         TargetSequenceReader targetSequenceReader = new TargetSequenceReader();
-        String targetDatasetPath = config.getProperty("targetDatasetPath");
+        String targetDatasetPath = getRequiredProperty(config, "targetDatasetPath");
         this.targetExtractions = targetSequenceReader.readTargetSequencesFromFile(targetDatasetPath);
 
         // Generate and load grammar from CSV
-        String grammarFilePath = config.getProperty("grammarDirPath") + config.getProperty("grammarFileName");
+        String grammarFilePath = getRequiredProperty(config, "grammarDirPath") + getRequiredProperty(config, "grammarFileName");
         GrammarGenerator.generateGrammar(csvFilePath, grammarFilePath);
         this.grammar = loadGrammar(grammarFilePath);
     }
@@ -88,6 +88,15 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
             config.load(input);
         }
         return config;
+    }
+
+    // Helper method to retrieve required properties
+    private static String getRequiredProperty(Properties config, String propertyName) throws IllegalArgumentException {
+        String value = config.getProperty(propertyName);
+        if (value == null) {
+            throw new IllegalArgumentException("Missing required configuration property: " + propertyName);
+        }
+        return value;
     }
 
     private static StringGrammar<String> loadGrammar(String filePath) throws Exception {
