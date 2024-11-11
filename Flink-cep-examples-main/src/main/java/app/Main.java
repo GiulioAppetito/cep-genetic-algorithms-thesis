@@ -21,6 +21,7 @@ import java.util.Properties;
 import java.util.Random;
 
 public class Main {
+
     public static void main(String[] args) {
         try {
             // Load configuration properties from config.properties file
@@ -38,19 +39,24 @@ public class Main {
             String csvFilePath = datasetDirPath + csvFileName;
 
             // Generate grammar from the CSV file
-            System.out.println("Generating grammar from CSV...");
+            printDivider("Generating Grammar from CSV");
             GrammarGenerator.generateGrammar(csvFilePath, grammarFilePath);
             System.out.println("Grammar generated at: " + grammarFilePath);
 
             // Load grammar and generate a random tree structure
+            printDivider("Loading Grammar");
             StringGrammar<String> grammar = loadGrammar(grammarFilePath);
+
+            printDivider("Generating Random Tree from Grammar");
             Tree<String> randomTree = generateRandomTree(grammar, maxHeight, targetDepth);
 
             if (randomTree != null) {
                 // Convert the tree structure into a pattern representation
+                printDivider("Applying Pattern Mapper");
                 PatternRepresentation patternRepresentation = mapTreeToPattern(randomTree);
 
                 // Convert the pattern representation into a Flink CEP pattern
+                printDivider("Converting to Flink Pattern");
                 Pattern<BaseEvent, ?> generatedPattern = mapPatternRepresentationToFlinkPattern(patternRepresentation);
 
                 // Set up the Flink environment and load events from the CSV
@@ -58,9 +64,10 @@ public class Main {
                 DataStream<BaseEvent> eventStream = CsvFileEventSource.generateEventDataStreamFromCSV(env, csvFilePath);
 
                 // Calculate fitness using the FitnessCalculator
+                printDivider("Computing Fitness");
                 FitnessCalculator fitnessCalculator = new FitnessCalculator(config);
-                System.out.println("\n______________________________ Computing fitness... ______________________________\n");
                 double fitness = fitnessCalculator.calculateFitness(env, eventStream, generatedPattern);
+                printDivider("Fitness Result");
                 System.out.println("Fitness: " + fitness + "%");
             } else {
                 System.out.println("Random Tree generation returned null.");
@@ -84,7 +91,7 @@ public class Main {
 
     // Loads grammar from a file
     private static StringGrammar<String> loadGrammar(String filePath) throws Exception {
-        System.out.println("\n______________________________ Loading grammar... ______________________________");
+        printDivider("Loading Grammar File");
         try (InputStream grammarStream = new FileInputStream(filePath)) {
             StringGrammar<String> grammar = StringGrammar.load(grammarStream);
             System.out.println("\nLoaded Grammar:\n ");
@@ -95,8 +102,6 @@ public class Main {
 
     // Generates a random tree structure based on the provided grammar
     private static Tree<String> generateRandomTree(StringGrammar<String> grammar, int maxHeight, int targetDepth) {
-        System.out.println("\n______________________________ Generating random tree from grammar... ______________________________\n");
-
         GrowGrammarTreeFactory<String> treeFactory = new GrowGrammarTreeFactory<>(maxHeight, grammar);
         Tree<String> randomTree = treeFactory.build(new Random(), targetDepth);
 
@@ -110,7 +115,6 @@ public class Main {
 
     // Maps the generated tree to a pattern representation
     private static PatternRepresentation mapTreeToPattern(Tree<String> randomTree) {
-        System.out.println("\n______________________________ Applying pattern mapper... ______________________________\n");
         TreeToRepresentationMapper toRepresentationMapper = new TreeToRepresentationMapper();
         PatternRepresentation patternRepresentation = toRepresentationMapper.apply(randomTree);
         System.out.println("\nMapped PatternRepresentation:\n");
@@ -120,11 +124,17 @@ public class Main {
 
     // Converts the pattern representation to a Flink CEP pattern
     private static Pattern<BaseEvent, ?> mapPatternRepresentationToFlinkPattern(PatternRepresentation patternRepresentation) {
-        System.out.println("\n______________________________ Converting to Flink Pattern... ______________________________");
         RepresentationToPatternMapper<BaseEvent> toPatternMapper = new RepresentationToPatternMapper<>();
         Pattern<BaseEvent, ?> flinkPattern = toPatternMapper.convert(patternRepresentation);
         System.out.println("\nGenerated Flink Pattern:\n");
         System.out.println(flinkPattern);
         return flinkPattern;
+    }
+
+    // Prints a divider with a title for sectioning
+    private static void printDivider(String title) {
+        System.out.println("\n╔════════════════════════════════════════════════╗");
+        System.out.println("║ " + title);
+        System.out.println("╚════════════════════════════════════════════════╝\n");
     }
 }
