@@ -2,7 +2,9 @@ package problem;
 
 import events.BaseEvent;
 import events.source.CsvFileEventSource;
-import fitness.FitnessCalculator;
+import fitness.utils.EventSequenceMatcher;
+import fitness.utils.ScoreCalculator;
+import fitness.utils.TargetSequenceReader;
 import io.github.ericmedvet.jgea.core.problem.TotalOrderQualityBasedProblem;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.GrammarBasedProblem;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.StringGrammar;
@@ -21,15 +23,12 @@ import java.util.*;
 import java.util.function.Function;
 
 public class PatternInferenceProblem implements GrammarBasedProblem<String, PatternRepresentation>, TotalOrderQualityBasedProblem<PatternRepresentation, Double> {
-    private final Set<Pattern<BaseEvent, ?>> truePatterns;
     private final Set<List<Map<String, Object>>> targetExtractions;
     private final DataStream<BaseEvent> eventStream;
     private final StringGrammar<String> grammar;
 
-    public PatternInferenceProblem(String configPath, Set<Pattern<BaseEvent, ?>> truePatterns) throws Exception {
-        this.truePatterns = truePatterns;
-
-        // Load configuration
+    public PatternInferenceProblem(String configPath) throws Exception {
+        // Load configuration properties
         Properties config = loadConfig(configPath);
         String datasetDirPath = config.getProperty("datasetDirPath");
         String csvFilePath = datasetDirPath + config.getProperty("csvFileName");
@@ -38,9 +37,10 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         this.eventStream = CsvFileEventSource.generateEventDataStreamFromCSV(env, csvFilePath);
 
-        // Read target sequences for fitness evaluation
+        // Load target sequences for fitness evaluation
+        TargetSequenceReader targetSequenceReader = new TargetSequenceReader();
         String targetDatasetPath = config.getProperty("targetDatasetPath");
-        this.targetExtractions = FitnessCalculator.readTargetSequencesFromFile(targetDatasetPath);
+        this.targetExtractions = targetSequenceReader.readTargetSequencesFromFile(targetDatasetPath);
 
         // Generate and load grammar from CSV
         String grammarFilePath = config.getProperty("grammarDirPath") + config.getProperty("grammarFileName");
@@ -55,16 +55,16 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
 
     @Override
     public Function<PatternRepresentation, Double> qualityFunction() {
-        return pr -> {
+        return patternRepresentation -> {
             try {
-                // Transform PatternRepresentation object into a Flink CEP Pattern
-                Pattern<BaseEvent, ?> generatedPattern = new RepresentationToPatternMapper<BaseEvent>().convert(pr);
+                // Transform PatternRepresentation to Flink CEP Pattern
+                Pattern<BaseEvent, ?> generatedPattern = new RepresentationToPatternMapper<BaseEvent>().convert(patternRepresentation);
 
-                // Find the extracted events by applying pr on the DataStream field
-                Set<List<Map<String, Object>>> detectedSequences = FitnessCalculator.collectSequenceMatches(eventStream, List.of(generatedPattern), "Generated");
+                // Use EventSequenceMatcher to get detected sequences
+                Set<List<Map<String, Object>>> detectedSequences = EventSequenceMatcher.collectSequenceMatches(eventStream, List.of(generatedPattern), "Generated");
 
-                // Compute fitness by comparing the extracted events with the targetExtractions
-                return FitnessCalculator.calculateFitnessScore(targetExtractions, detectedSequences);
+                // Compute fitness score
+                return ScoreCalculator.calculateFitnessScore(targetExtractions, detectedSequences);
             } catch (Exception e) {
                 e.printStackTrace();
                 return 0.0;
