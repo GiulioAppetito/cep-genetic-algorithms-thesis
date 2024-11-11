@@ -6,6 +6,7 @@ import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import representation.PatternRepresentation;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,10 +16,18 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
     public Pattern<E, ?> convert(PatternRepresentation representation) {
         List<PatternRepresentation.Event> events = representation.events();
         Pattern<E, E> flinkPattern = null;
+        Map<String, Integer> eventNameCounts = new HashMap<>(); // Track counts for unique names
 
         for (int i = 0; i < events.size(); i++) {
             PatternRepresentation.Event event = events.get(i);
-            Pattern<E, E> newPattern = createPatternForEvent(event);
+
+            // Ensure unique event identifier with suffix
+            String baseIdentifier = event.identifier();
+            int count = eventNameCounts.getOrDefault(baseIdentifier, 0) + 1;
+            eventNameCounts.put(baseIdentifier, count);
+            String uniqueIdentifier = baseIdentifier + "_" + count;
+
+            Pattern<E, E> newPattern = createPatternForEvent(event, uniqueIdentifier); // Use unique identifier
 
             // Initialize with the first event, otherwise chain the events
             if (flinkPattern == null) {
@@ -46,8 +55,8 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
     }
 
     // Creates a Pattern for a single event, applying any conditions and quantifiers
-    private Pattern<E, E> createPatternForEvent(PatternRepresentation.Event event) {
-        Pattern<E, E> pattern = Pattern.<E>begin(event.identifier());
+    private Pattern<E, E> createPatternForEvent(PatternRepresentation.Event event, String uniqueIdentifier) {
+        Pattern<E, E> pattern = Pattern.<E>begin(uniqueIdentifier); // Use unique identifier
 
         if (event.quantifier() instanceof PatternRepresentation.Quantifier.ParamFree quantifier) {
             pattern = switch (quantifier) {

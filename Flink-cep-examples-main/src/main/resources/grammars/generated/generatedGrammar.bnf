@@ -4,7 +4,7 @@
 <event> ::= <identifier> <conditions> <quantifier>
 <conditions> ::= <condition> | <condition> <cConcat> <conditions>
 <eConcat> ::= next | followedBy | followedByAny
-<identifier> ::= E1 | E2 | E3 | E4 | E5 | E6 | E7 | E8 | E9 | E10
+<identifier> ::= event
 <cConcat> ::= and | or
 <condition> ::= sensor_id <opStr> <sensor_idValue> | alarm_status <opBool> <boolean> | temperature <opNum> <fNum> | location <opStr> <locationValue> | vibration <opNum> <fNum> | speed <opNum> <fNum> | timestamp <opNum> <fNum>
 <opNum> ::= equal | notEqual | lt | gt

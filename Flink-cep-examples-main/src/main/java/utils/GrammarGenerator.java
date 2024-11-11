@@ -34,15 +34,7 @@ public class GrammarGenerator {
         grammar.append("<eConcat> ::= next | followedBy | followedByAny\n");
 
         // Identifiers for event types
-        grammar.append("<identifier> ::= ");
-        for (int i = 1; i <= 10; i++) {
-            grammar.append("E").append(i);
-            if (i < 10) {
-                grammar.append(" | ");
-            } else {
-                grammar.append("\n");
-            }
-        }
+        grammar.append("<identifier> ::= event\n");
 
         // Logical operators for conditions
         grammar.append("<cConcat> ::= and | or\n");

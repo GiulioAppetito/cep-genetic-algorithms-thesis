@@ -21,20 +21,104 @@ public class TargetSequencesGenerator {
     public static List<Pattern<BaseEvent, ?>> createTargetPatterns() {
         List<Pattern<BaseEvent, ?>> targetPatterns = new ArrayList<>();
 
+        // Pattern 1: Detect specific sensor (SENSOR_009) activation
         Pattern<BaseEvent, BaseEvent> pattern1 = Pattern
-                .<BaseEvent>begin("event1")
+                .<BaseEvent>begin("sensor_009_activation")
                 .where(new SimpleCondition<BaseEvent>() {
                     @Override
                     public boolean filter(BaseEvent event) {
-                        Object alarm_status = event.toMap().get("alarm_status");
-                        return alarm_status.equals(true);
+                        Object sensor_id = event.toMap().get("sensor_id");
+                        return "SENSOR_009".equals(sensor_id);
                     }
                 });
 
+        // Pattern 2: Detect a high temperature event
+        Pattern<BaseEvent, BaseEvent> pattern2 = Pattern
+                .<BaseEvent>begin("high_temperature")
+                .where(new SimpleCondition<BaseEvent>() {
+                    @Override
+                    public boolean filter(BaseEvent event) {
+                        Object temperature = event.toMap().get("temperature");
+                        return temperature instanceof Number && ((Number) temperature).doubleValue() > 75.0;
+                    }
+                });
+
+        // Pattern 3: Detect events with a specific location and alarm status on
+        Pattern<BaseEvent, BaseEvent> pattern3 = Pattern
+                .<BaseEvent>begin("location_and_alarm")
+                .where(new SimpleCondition<BaseEvent>() {
+                    @Override
+                    public boolean filter(BaseEvent event) {
+                        Object location = event.toMap().get("location");
+                        Object alarmStatus = event.toMap().get("alarm_status");
+                        return "Zone_Alpha".equals(location) && Boolean.TRUE.equals(alarmStatus);
+                    }
+                });
+
+        // Pattern 4: Detect a sequence where sensor changes location
+        Pattern<BaseEvent, BaseEvent> pattern4 = Pattern
+                .<BaseEvent>begin("location_change")
+                .where(new SimpleCondition<BaseEvent>() {
+                    @Override
+                    public boolean filter(BaseEvent event) {
+                        Object sensor_id = event.toMap().get("sensor_id");
+                        Object location = event.toMap().get("location");
+                        return "SENSOR_007".equals(sensor_id) && "Zone_Bravo".equals(location);
+                    }
+                })
+                .next("new_location")
+                .where(new SimpleCondition<BaseEvent>() {
+                    @Override
+                    public boolean filter(BaseEvent event) {
+                        Object sensor_id = event.toMap().get("sensor_id");
+                        Object location = event.toMap().get("location");
+                        return "SENSOR_007".equals(sensor_id) && "Zone_Charlie".equals(location);
+                    }
+                });
+
+        // Pattern 5: Detect sequence of high vibration followed by speed increase
+        Pattern<BaseEvent, BaseEvent> pattern5 = Pattern
+                .<BaseEvent>begin("high_vibration")
+                .where(new SimpleCondition<BaseEvent>() {
+                    @Override
+                    public boolean filter(BaseEvent event) {
+                        Object vibration = event.toMap().get("vibration");
+                        return vibration instanceof Number && ((Number) vibration).doubleValue() > 5.0;
+                    }
+                })
+                .next("speed_increase")
+                .where(new SimpleCondition<BaseEvent>() {
+                    @Override
+                    public boolean filter(BaseEvent event) {
+                        Object speed = event.toMap().get("speed");
+                        return speed instanceof Number && ((Number) speed).doubleValue() > 20.0;
+                    }
+                });
+
+        // Pattern 6: Detect optional event if alarm is on and temperature is high
+        Pattern<BaseEvent, BaseEvent> pattern6 = Pattern
+                .<BaseEvent>begin("alarm_and_temperature")
+                .where(new SimpleCondition<BaseEvent>() {
+                    @Override
+                    public boolean filter(BaseEvent event) {
+                        Object alarmStatus = event.toMap().get("alarm_status");
+                        Object temperature = event.toMap().get("temperature");
+                        return Boolean.TRUE.equals(alarmStatus) && temperature instanceof Number && ((Number) temperature).doubleValue() > 60.0;
+                    }
+                })
+                .optional();
+
+        // Add all patterns to the list
         targetPatterns.add(pattern1);
+        targetPatterns.add(pattern2);
+        targetPatterns.add(pattern3);
+        targetPatterns.add(pattern4);
+        targetPatterns.add(pattern5);
+        targetPatterns.add(pattern6);
 
         return targetPatterns;
     }
+
 
     // Apply the patterns to the DataStream and save matches to a file
     public static void saveMatchesToFile(List<Pattern<BaseEvent, ?>> patterns, DataStream<BaseEvent> inputDataStream) throws Exception {
