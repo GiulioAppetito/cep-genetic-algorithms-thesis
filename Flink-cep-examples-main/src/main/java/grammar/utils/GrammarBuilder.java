@@ -44,7 +44,7 @@ public class GrammarBuilder {
         grammar.append("<opNum> ::= equal | notEqual | lt | gt\n");
         grammar.append("<opStr> ::= equal | notEqual\n");
         grammar.append("<opBool> ::= equal | notEqual\n");
-        grammar.append("<quantifier> ::= oneOrMore | optional | <iNum>\n");
+        grammar.append("<quantifier> ::= oneOrMore | optional | <greaterThanZeroNum>\n");
         grammar.append("<digit> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9\n");
         grammar.append("<greaterThanZeroDigit> ::= 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9\n");
         grammar.append("<greaterThanZeroNum> ::= <greaterThanZeroDigit> | <greaterThanZeroNum> <digit> | <greaterThanZeroNum> <greaterThanZeroDigit>\n");

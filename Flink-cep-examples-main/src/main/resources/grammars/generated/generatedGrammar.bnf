@@ -11,7 +11,7 @@
 <opNum> ::= equal | notEqual | lt | gt
 <opStr> ::= equal | notEqual
 <opBool> ::= equal | notEqual
-<quantifier> ::= oneOrMore | optional | <iNum>
+<quantifier> ::= oneOrMore | optional | <greaterThanZeroNum>
 <digit> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 <greaterThanZeroDigit> ::= 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 <greaterThanZeroNum> ::= <greaterThanZeroDigit> | <greaterThanZeroNum> <digit> | <greaterThanZeroNum> <greaterThanZeroDigit>
