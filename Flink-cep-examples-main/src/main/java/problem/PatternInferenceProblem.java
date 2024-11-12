@@ -59,18 +59,20 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
             try {
                 // Transform PatternRepresentation to Flink CEP Pattern
                 Pattern<BaseEvent, ?> generatedPattern = new RepresentationToPatternMapper<BaseEvent>().convert(patternRepresentation);
+                PatternRepresentation.KeyByClause keyByClause = patternRepresentation.keyByClause();
 
-                // Use EventSequenceMatcher to get detected sequences
-                Set<List<Map<String, Object>>> detectedSequences = EventSequenceMatcher.collectSequenceMatches(eventStream, List.of(generatedPattern), "Generated");
+                // Use EventSequenceMatcher to get detected sequences, now passing keyByClause
+                Set<List<Map<String, Object>>> detectedSequences = EventSequenceMatcher.collectSequenceMatches(eventStream, List.of(generatedPattern), "Generated", keyByClause);
 
                 // Compute fitness score
-                return ScoreCalculator.calculateFitnessScore(targetExtractions, detectedSequences);
+                return ScoreCalculator.calculateFitnessScore(targetExtractions, detectedSequences, keyByClause);
             } catch (Exception e) {
                 e.printStackTrace();
                 return 0.0;
             }
         };
     }
+
 
     @Override
     public StringGrammar<String> getGrammar() {

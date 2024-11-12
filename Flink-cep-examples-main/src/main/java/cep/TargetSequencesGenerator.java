@@ -17,23 +17,13 @@ import java.util.*;
 public class TargetSequencesGenerator {
 
     private static String targetDatasetPath;
+    private static String keyByField;  // Field to store the key for keyBy operation
 
     public static List<Pattern<BaseEvent, ?>> createTargetPatterns() {
         List<Pattern<BaseEvent, ?>> targetPatterns = new ArrayList<>();
 
-        // Pattern 1: Detect specific sensor (SENSOR_009) activation
+        // Pattern 1: Detect a high temperature event
         Pattern<BaseEvent, BaseEvent> pattern1 = Pattern
-                .<BaseEvent>begin("sensor_009_activation")
-                .where(new SimpleCondition<BaseEvent>() {
-                    @Override
-                    public boolean filter(BaseEvent event) {
-                        Object sensor_id = event.toMap().get("sensor_id");
-                        return "SENSOR_009".equals(sensor_id);
-                    }
-                });
-
-        // Pattern 2: Detect a high temperature event
-        Pattern<BaseEvent, BaseEvent> pattern2 = Pattern
                 .<BaseEvent>begin("high_temperature")
                 .where(new SimpleCondition<BaseEvent>() {
                     @Override
@@ -43,41 +33,8 @@ public class TargetSequencesGenerator {
                     }
                 });
 
-        // Pattern 3: Detect events with a specific location and alarm status on
-        Pattern<BaseEvent, BaseEvent> pattern3 = Pattern
-                .<BaseEvent>begin("location_and_alarm")
-                .where(new SimpleCondition<BaseEvent>() {
-                    @Override
-                    public boolean filter(BaseEvent event) {
-                        Object location = event.toMap().get("location");
-                        Object alarmStatus = event.toMap().get("alarm_status");
-                        return "Zone_Alpha".equals(location) && Boolean.TRUE.equals(alarmStatus);
-                    }
-                });
-
-        // Pattern 4: Detect a sequence where sensor changes location
-        Pattern<BaseEvent, BaseEvent> pattern4 = Pattern
-                .<BaseEvent>begin("location_change")
-                .where(new SimpleCondition<BaseEvent>() {
-                    @Override
-                    public boolean filter(BaseEvent event) {
-                        Object sensor_id = event.toMap().get("sensor_id");
-                        Object location = event.toMap().get("location");
-                        return "SENSOR_007".equals(sensor_id) && "Zone_Bravo".equals(location);
-                    }
-                })
-                .next("new_location")
-                .where(new SimpleCondition<BaseEvent>() {
-                    @Override
-                    public boolean filter(BaseEvent event) {
-                        Object sensor_id = event.toMap().get("sensor_id");
-                        Object location = event.toMap().get("location");
-                        return "SENSOR_007".equals(sensor_id) && "Zone_Charlie".equals(location);
-                    }
-                });
-
-        // Pattern 5: Detect sequence of high vibration followed by speed increase
-        Pattern<BaseEvent, BaseEvent> pattern5 = Pattern
+        // Pattern 2: Detect sequence of high vibration followed by speed increase
+        Pattern<BaseEvent, BaseEvent> pattern2 = Pattern
                 .<BaseEvent>begin("high_vibration")
                 .where(new SimpleCondition<BaseEvent>() {
                     @Override
@@ -95,8 +52,8 @@ public class TargetSequencesGenerator {
                     }
                 });
 
-        // Pattern 6: Detect optional event if alarm is on and temperature is high
-        Pattern<BaseEvent, BaseEvent> pattern6 = Pattern
+        // Pattern 3: Detect optional event if alarm is on and temperature is high
+        Pattern<BaseEvent, BaseEvent> pattern3 = Pattern
                 .<BaseEvent>begin("alarm_and_temperature")
                 .where(new SimpleCondition<BaseEvent>() {
                     @Override
@@ -112,21 +69,25 @@ public class TargetSequencesGenerator {
         targetPatterns.add(pattern1);
         targetPatterns.add(pattern2);
         targetPatterns.add(pattern3);
-        targetPatterns.add(pattern4);
-        targetPatterns.add(pattern5);
-        targetPatterns.add(pattern6);
 
         return targetPatterns;
     }
 
-
-    // Apply the patterns to the DataStream and save matches to a file
+    // Apply patterns to the DataStream and save matches to a file
     public static void saveMatchesToFile(List<Pattern<BaseEvent, ?>> patterns, DataStream<BaseEvent> inputDataStream) throws Exception {
         Set<List<Map<String, Object>>> sequencesSet = new HashSet<>();
 
+        // Apply keyBy if keyByField is specified
+        DataStream<BaseEvent> streamToUse;
+        if (keyByField != null && !keyByField.isEmpty()) {
+            streamToUse = inputDataStream.keyBy(event -> event.toMap().get(keyByField));
+        } else {
+            streamToUse = inputDataStream;  // No keyBy is applied
+        }
+
         try (FileWriter writer = new FileWriter(targetDatasetPath)) {
             for (Pattern<BaseEvent, ?> pattern : patterns) {
-                PatternStream<BaseEvent> patternStream = CEP.pattern(inputDataStream, pattern);
+                PatternStream<BaseEvent> patternStream = CEP.pattern(streamToUse, pattern);
                 DataStream<List<BaseEvent>> matchedStream = patternStream.select(new PatternToListSelectFunction());
 
                 Iterator<List<BaseEvent>> iterator = DataStreamUtils.collect(matchedStream);
@@ -176,6 +137,9 @@ public class TargetSequencesGenerator {
         String datasetDirPath = config.getProperty("datasetDirPath");
         String csvFileName = config.getProperty("csvFileName");
         targetDatasetPath = config.getProperty("targetDatasetPath", "Flink-cep-examples-main/src/main/resources/datasets/target/targetDataset.csv");
+
+        // Load keyBy field from configuration
+        keyByField = config.getProperty("keyByField", null);
 
         String csvFilePath = datasetDirPath + csvFileName;
 

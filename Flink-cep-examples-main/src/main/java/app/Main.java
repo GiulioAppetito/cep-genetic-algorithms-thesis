@@ -55,6 +55,9 @@ public class Main {
                 printDivider("Applying Pattern Mapper");
                 PatternRepresentation patternRepresentation = mapTreeToPattern(randomTree);
 
+                // Extract keyByClause for fitness calculation
+                PatternRepresentation.KeyByClause keyByClause = patternRepresentation.keyByClause();
+
                 // Convert the pattern representation into a Flink CEP pattern
                 printDivider("Converting to Flink Pattern");
                 Pattern<BaseEvent, ?> generatedPattern = mapPatternRepresentationToFlinkPattern(patternRepresentation);
@@ -66,7 +69,7 @@ public class Main {
                 // Calculate fitness using the FitnessCalculator
                 printDivider("Computing Fitness");
                 FitnessCalculator fitnessCalculator = new FitnessCalculator(config);
-                double fitness = fitnessCalculator.calculateFitness(env, eventStream, generatedPattern);
+                double fitness = fitnessCalculator.calculateFitness(env, eventStream, generatedPattern, keyByClause);
                 printDivider("Fitness Result");
                 System.out.println("Fitness: " + fitness + "%");
             } else {
@@ -99,7 +102,6 @@ public class Main {
             return grammar;
         }
     }
-
 
     // Generates a random tree structure based on the provided grammar
     private static Tree<String> generateRandomTree(StringGrammar<String> grammar, int maxHeight, int targetDepth) {

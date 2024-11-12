@@ -6,7 +6,8 @@ import java.util.stream.Collectors;
 
 public record PatternRepresentation(
         List<Event> events,
-        WithinClause withinClause
+        WithinClause withinClause,
+        KeyByClause keyByClause
 ) implements Serializable {
 
     @Override
@@ -18,6 +19,7 @@ public record PatternRepresentation(
         return "PatternRepresentation {\n" +
                 "  events=[\n  " + eventsStr + "\n  ],\n" +
                 "  withinClause=" + withinClause + "\n" +
+                "  keyByClause=" + keyByClause + "\n" +
                 "}";
     }
 
@@ -43,6 +45,13 @@ public record PatternRepresentation(
 
         public enum Concatenator implements Serializable {
             NEXT, FOLLOWED_BY, FOLLOWED_BY_ANY
+        }
+    }
+
+    public record KeyByClause(String key) implements Serializable{
+        @Override
+        public String toString() {
+            return "KeyByClause { key=" + key + " }";
         }
     }
 

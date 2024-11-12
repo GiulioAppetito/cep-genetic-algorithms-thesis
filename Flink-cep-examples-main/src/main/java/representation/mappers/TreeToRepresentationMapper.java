@@ -10,13 +10,14 @@ import java.util.function.Function;
 public class TreeToRepresentationMapper implements Function<Tree<String>, PatternRepresentation> {
 
     /**
-     * <pattern> ::= <events> <withinClause> | <events>
+     * <pattern> ::= <events> <withinClause> <key_by> | <events> <withinClause> <key_by> | <events> <withinClause> | <events>
      * Processes the root node to extract events and withinClause elements.
      */
     @Override
     public PatternRepresentation apply(Tree<String> tree) {
         List<PatternRepresentation.Event> events = new ArrayList<>();
         PatternRepresentation.WithinClause withinClause = null;
+        PatternRepresentation.KeyByClause keyByClause = null;
 
         // Parse the children of the root tree node
         for (Tree<String> child : tree) {
@@ -24,6 +25,8 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
                 events = parseEvents(child); // Parse all events recursively
             } else if ("<withinClause>".equals(child.content())) {
                 withinClause = parseWithinClause(child); // Parse within clause
+            } else if ("<key_by>".equals(child.content())) {
+                keyByClause = parseKeyByClause(child);
             }
         }
 
@@ -31,7 +34,7 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
         System.out.println("Parsed Events: " + events);
         System.out.println("Parsed Within Clause: " + withinClause);
 
-        PatternRepresentation patternRepresentation = new PatternRepresentation(events, withinClause);
+        PatternRepresentation patternRepresentation = new PatternRepresentation(events, withinClause, keyByClause);
 
         // Validate the integrity between the tree and the PatternRepresentation
         validatePatternRepresentation(tree, patternRepresentation);
@@ -289,6 +292,14 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
     private PatternRepresentation.WithinClause parseWithinClause(Tree<String> withinClauseNode) {
         float duration = parseFNum(withinClauseNode.child(0));
         return new PatternRepresentation.WithinClause(duration);
+    }
+
+    /**
+     * Parses the key_by applied to the event sequence.
+     */
+    private PatternRepresentation.KeyByClause parseKeyByClause(Tree<String> child) {
+        String key = child.visitLeaves().get(0);
+        return new PatternRepresentation.KeyByClause(key);
     }
 
     /**

@@ -1,4 +1,4 @@
-<pattern> ::= <events> <withinClause> | <events>
+<pattern> ::= <events> <withinClause> <key_by> | <events> <withinClause> <key_by> | <events> <withinClause> | <events>
 <withinClause> ::= <iNum>
 <events> ::= <event> | <event> <eConcat> <events>
 <event> ::= <identifier> <conditions> <quantifier>
@@ -6,12 +6,15 @@
 <eConcat> ::= next | followedBy | followedByAny
 <identifier> ::= event
 <cConcat> ::= and | or
-<condition> ::= sensor_id <opStr> <sensor_idValue> | alarm_status <opBool> <boolean> | temperature <opNum> <fNum> | location <opStr> <locationValue> | vibration <opNum> <fNum> | speed <opNum> <fNum> | timestamp <opNum> <fNum>
+<condition> ::= sensor_id <opStr> <sensor_idValue> | alarm_status <opBool> <boolean> | temperature <opNum> <fNum> | location <opStr> <locationValue> | vibration <opNum> <fNum> | speed <opNum> <fNum>
+<key_by> ::= sensor_id | alarm_status | temperature | location | vibration | speed
 <opNum> ::= equal | notEqual | lt | gt
 <opStr> ::= equal | notEqual
 <opBool> ::= equal | notEqual
 <quantifier> ::= oneOrMore | optional | <iNum>
 <digit> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+<greaterThanZeroDigit> ::= 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+<greaterThanZeroNum> ::= <greaterThanZeroDigit> | <greaterThanZeroNum> <digit> | <greaterThanZeroNum> <greaterThanZeroDigit>
 <iNum> ::= <digit> | <iNum> <digit>
 <fNum> ::= + <digit> . <digit> <digit> E <digit> | - <digit> . <digit> <digit> E <digit> | + <digit> . <digit> <digit> E - <digit> | - <digit> . <digit> <digit> E - <digit>
 <boolean> ::= true | false
