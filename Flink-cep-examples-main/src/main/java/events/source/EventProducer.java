@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class CsvFileEventSource {
+public class EventProducer {
 
     public static DataStream<BaseEvent> generateEventDataStreamFromCSV(StreamExecutionEnvironment env, String csvFilePath) {
         List<BaseEvent> events = new ArrayList<>();

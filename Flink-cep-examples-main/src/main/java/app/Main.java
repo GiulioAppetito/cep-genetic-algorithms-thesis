@@ -1,7 +1,7 @@
 package app;
 
 import events.BaseEvent;
-import events.source.CsvFileEventSource;
+import events.source.EventProducer;
 import fitness.FitnessCalculator;
 import grammar.GrammarGenerator;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.StringGrammar;
@@ -64,7 +64,7 @@ public class Main {
 
                 // Set up the Flink environment and load events from the CSV
                 StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-                DataStream<BaseEvent> eventStream = CsvFileEventSource.generateEventDataStreamFromCSV(env, csvFilePath);
+                DataStream<BaseEvent> eventStream = EventProducer.generateEventDataStreamFromCSV(env, csvFilePath);
 
                 // Calculate fitness using the FitnessCalculator
                 printDivider("Computing Fitness");

@@ -2,8 +2,8 @@ package representation.mappers;
 
 import io.github.ericmedvet.jgea.core.representation.tree.Tree;
 import representation.PatternRepresentation;
-import representation.mappers.parsers.ClauseParser;
-import representation.mappers.parsers.EventParser;
+import representation.mappers.treerepresentationparsers.ClauseParser;
+import representation.mappers.treerepresentationparsers.EventParser;
 
 import java.util.List;
 import java.util.ArrayList;

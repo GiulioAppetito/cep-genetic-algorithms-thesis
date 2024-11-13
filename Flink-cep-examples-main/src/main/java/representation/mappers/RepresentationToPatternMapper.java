@@ -39,6 +39,8 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
                         case NEXT -> flinkPattern.next(newPattern);
                         case FOLLOWED_BY -> flinkPattern.followedBy(newPattern);
                         case FOLLOWED_BY_ANY -> flinkPattern.followedByAny(newPattern);
+                        case NOT_NEXT -> flinkPattern.notNext(uniqueIdentifier);
+                        case NOT_FOLLOWED_BY -> flinkPattern.notFollowedBy(uniqueIdentifier);
                     };
                 } else {
                     flinkPattern = flinkPattern.next(newPattern);

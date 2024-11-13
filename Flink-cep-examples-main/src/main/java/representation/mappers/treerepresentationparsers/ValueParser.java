@@ -1,4 +1,4 @@
-package representation.mappers.parsers;
+package representation.mappers.treerepresentationparsers;
 
 import io.github.ericmedvet.jgea.core.representation.tree.Tree;
 

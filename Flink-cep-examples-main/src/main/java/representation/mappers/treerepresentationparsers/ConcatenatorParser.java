@@ -1,4 +1,4 @@
-package representation.mappers.parsers;
+package representation.mappers.treerepresentationparsers;
 
 import io.github.ericmedvet.jgea.core.representation.tree.Tree;
 import representation.PatternRepresentation;
@@ -11,6 +11,8 @@ public class ConcatenatorParser {
             case "next" -> PatternRepresentation.Event.Concatenator.NEXT;
             case "followedBy" -> PatternRepresentation.Event.Concatenator.FOLLOWED_BY;
             case "followedByAny" -> PatternRepresentation.Event.Concatenator.FOLLOWED_BY_ANY;
+            case "notNext"-> PatternRepresentation.Event.Concatenator.NOT_NEXT;
+            case "notFollowedBy"-> PatternRepresentation.Event.Concatenator.NOT_FOLLOWED_BY;
             default -> throw new IllegalArgumentException("Unknown concatenator: " + value);
         };
     }

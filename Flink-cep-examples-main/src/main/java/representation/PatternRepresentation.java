@@ -44,7 +44,7 @@ public record PatternRepresentation(
         }
 
         public enum Concatenator implements Serializable {
-            NEXT, FOLLOWED_BY, FOLLOWED_BY_ANY
+            NEXT, FOLLOWED_BY, FOLLOWED_BY_ANY, NOT_NEXT, NOT_FOLLOWED_BY
         }
     }
 

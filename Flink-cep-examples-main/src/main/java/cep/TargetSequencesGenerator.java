@@ -1,7 +1,7 @@
 package cep;
 
 import events.BaseEvent;
-import events.source.CsvFileEventSource;
+import events.source.EventProducer;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternSelectFunction;
 import org.apache.flink.cep.PatternStream;
@@ -145,7 +145,7 @@ public class TargetSequencesGenerator {
 
         // Set up Flink environment and load events from CSV
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        DataStream<BaseEvent> eventStream = CsvFileEventSource.generateEventDataStreamFromCSV(env, csvFilePath);
+        DataStream<BaseEvent> eventStream = EventProducer.generateEventDataStreamFromCSV(env, csvFilePath);
 
         // Create target patterns and save matches to a file
         List<Pattern<BaseEvent, ?>> targetPatterns = createTargetPatterns();

@@ -1,7 +1,7 @@
 package problem;
 
 import events.BaseEvent;
-import events.source.CsvFileEventSource;
+import events.source.EventProducer;
 import fitness.utils.EventSequenceMatcher;
 import fitness.utils.ScoreCalculator;
 import fitness.utils.TargetSequenceReader;
@@ -35,7 +35,7 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
 
         // Initialize Flink environment and load events from CSV
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        this.eventStream = CsvFileEventSource.generateEventDataStreamFromCSV(env, csvFilePath);
+        this.eventStream = EventProducer.generateEventDataStreamFromCSV(env, csvFilePath);
 
         // Load target sequences for fitness evaluation
         TargetSequenceReader targetSequenceReader = new TargetSequenceReader();

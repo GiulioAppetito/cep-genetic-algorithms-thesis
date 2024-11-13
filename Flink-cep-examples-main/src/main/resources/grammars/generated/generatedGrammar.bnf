@@ -3,9 +3,9 @@
 <events> ::= <event> | <event> <eConcat> <events>
 <event> ::= <identifier> <conditions> <quantifier>
 <conditions> ::= <condition> | <condition> <cConcat> <conditions>
-<eConcat> ::= next | followedBy | followedByAny
-<identifier> ::= event
 <cConcat> ::= and | or
+<identifier> ::= event
+<eConcat> ::= next | followedBy | followedByAny | notNext | notFollowedBy
 <condition> ::= sensor_id <opStr> <sensor_idValue> | alarm_status <opBool> <boolean> | temperature <opNum> <fNum> | location <opStr> <locationValue> | vibration <opNum> <fNum> | speed <opNum> <fNum>
 <key_by> ::= sensor_id | alarm_status | temperature | location | vibration | speed
 <opNum> ::= equal | notEqual | lt | gt
