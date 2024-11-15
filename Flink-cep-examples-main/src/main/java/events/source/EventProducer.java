@@ -3,6 +3,7 @@ package events.source;
 import events.BaseEvent;
 import events.GenericEvent;
 import grammar.utils.CSVTypesExtractor;
+import grammar.types.DataTypesEnum;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -23,7 +24,7 @@ public class EventProducer {
 
         try {
             // Use CSVReader to get column types
-            Map<String, String> columnTypes = CSVTypesExtractor.getColumnTypesFromCSV(csvFilePath);
+            Map<String, DataTypesEnum> columnTypes = CSVTypesExtractor.getColumnTypesFromCSV(csvFilePath);
 
             try (Reader reader = new FileReader(csvFilePath);
                  CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
@@ -40,7 +41,7 @@ public class EventProducer {
                     GenericEvent event = new GenericEvent(timestamp);
 
                     // Parse other attributes without "timestamp"
-                    for (Map.Entry<String, String> entry : columnTypes.entrySet()) {
+                    for (Map.Entry<String, DataTypesEnum> entry : columnTypes.entrySet()) {
                         String column = entry.getKey();
 
                         // Skip the "timestamp" field since it's already parsed
@@ -48,16 +49,16 @@ public class EventProducer {
                             continue;
                         }
 
-                        String type = entry.getValue();
+                        String type = String.valueOf(entry.getValue());
                         String value = record.get(column);
 
                         try {
                             switch (type) {
-                                case "int" -> event.setAttribute(column, Integer.parseInt(value));
-                                case "float" -> event.setAttribute(column, Float.parseFloat(value));
-                                case "long" -> event.setAttribute(column, Long.parseLong(value));
-                                case "boolean" -> event.setAttribute(column, Boolean.parseBoolean(value));
-                                case "string" -> event.setAttribute(column, value);
+                                case "INT" -> event.setAttribute(column, Integer.parseInt(value));
+                                case "FLOAT" -> event.setAttribute(column, Float.parseFloat(value));
+                                case "LONG" -> event.setAttribute(column, Long.parseLong(value));
+                                case "BOOLEAN" -> event.setAttribute(column, Boolean.parseBoolean(value));
+                                case "STRING" -> event.setAttribute(column, value);
                                 default -> throw new IllegalArgumentException("Unsupported data type: " + type);
                             }
                         } catch (NumberFormatException nfe) {

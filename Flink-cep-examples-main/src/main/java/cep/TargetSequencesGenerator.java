@@ -22,53 +22,47 @@ public class TargetSequencesGenerator {
     public static List<Pattern<BaseEvent, ?>> createTargetPatterns() {
         List<Pattern<BaseEvent, ?>> targetPatterns = new ArrayList<>();
 
-        // Pattern 1: Detect a high temperature event
         Pattern<BaseEvent, BaseEvent> pattern1 = Pattern
-                .<BaseEvent>begin("high_temperature")
+                .<BaseEvent>begin("successful_login_true")
                 .where(new SimpleCondition<BaseEvent>() {
                     @Override
                     public boolean filter(BaseEvent event) {
-                        Object temperature = event.toMap().get("temperature");
-                        return temperature instanceof Number && ((Number) temperature).doubleValue() > 75.0;
+                        Object loginStatus = event.toMap().get("successful_login");
+                        return Boolean.TRUE.equals(loginStatus);
+                    }
+                })
+                .next("ip_address_129_16_0_30")
+                .where(new SimpleCondition<BaseEvent>() {
+                    @Override
+                    public boolean filter(BaseEvent event) {
+                        Object ipAddress = event.toMap().get("ip_address");
+                        return "129.16.0.30".equals(ipAddress);
                     }
                 });
 
-        // Pattern 2: Detect sequence of high vibration followed by speed increase
         Pattern<BaseEvent, BaseEvent> pattern2 = Pattern
-                .<BaseEvent>begin("high_vibration")
+                .<BaseEvent>begin("ip_address_129_16_0_5_false")
                 .where(new SimpleCondition<BaseEvent>() {
                     @Override
                     public boolean filter(BaseEvent event) {
-                        Object vibration = event.toMap().get("vibration");
-                        return vibration instanceof Number && ((Number) vibration).doubleValue() > 5.0;
+                        Object ipAddress = event.toMap().get("ip_address");
+                        Object loginStatus = event.toMap().get("successful_login");
+                        return "129.16.0.5".equals(ipAddress) && Boolean.FALSE.equals(loginStatus);
                     }
                 })
-                .next("speed_increase")
+                .followedBy("timestamp_check")
                 .where(new SimpleCondition<BaseEvent>() {
                     @Override
                     public boolean filter(BaseEvent event) {
-                        Object speed = event.toMap().get("speed");
-                        return speed instanceof Number && ((Number) speed).doubleValue() > 20.0;
+                        Object timestamp = event.toMap().get("timestamp");
+                        return timestamp instanceof Number && ((Number) timestamp).longValue() > 1724057899441646L;
                     }
                 });
 
-        // Pattern 3: Detect optional event if alarm is on and temperature is high
-        Pattern<BaseEvent, BaseEvent> pattern3 = Pattern
-                .<BaseEvent>begin("alarm_and_temperature")
-                .where(new SimpleCondition<BaseEvent>() {
-                    @Override
-                    public boolean filter(BaseEvent event) {
-                        Object alarmStatus = event.toMap().get("alarm_status");
-                        Object temperature = event.toMap().get("temperature");
-                        return Boolean.TRUE.equals(alarmStatus) && temperature instanceof Number && ((Number) temperature).doubleValue() > 60.0;
-                    }
-                })
-                .optional();
 
         // Add all patterns to the list
         targetPatterns.add(pattern1);
         targetPatterns.add(pattern2);
-        targetPatterns.add(pattern3);
 
         return targetPatterns;
     }
@@ -139,7 +133,7 @@ public class TargetSequencesGenerator {
         targetDatasetPath = config.getProperty("targetDatasetPath", "Flink-cep-examples-main/src/main/resources/datasets/target/targetDataset.csv");
 
         // Load keyBy field from configuration
-        keyByField = config.getProperty("keyByField", null);
+        keyByField = config.getProperty("targetKeyByField", null);
 
         String csvFilePath = datasetDirPath + csvFileName;
 
