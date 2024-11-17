@@ -6,16 +6,26 @@ import representation.PatternRepresentation;
 public class QuantifierParser {
 
     public static PatternRepresentation.Quantifier parseQuantifier(Tree<String> quantifierNode) {
-        Tree<String> quantNode = quantifierNode.child(0);
+        Tree<String> quantNode = quantifierNode.child(0); // Identify quantifier type
         return switch (quantNode.content()) {
             case "oneOrMore" -> PatternRepresentation.Quantifier.ParamFree.ONE_OR_MORE;
             case "optional" -> PatternRepresentation.Quantifier.ParamFree.OPTIONAL;
             case "times" -> {
+                // Parse the number of times from <greaterThanZeroNum>
                 Tree<String> timesValueNode = quantifierNode.child(1);
-                int timesValue = Integer.parseInt(timesValueNode.visitLeaves().get(0));
+                int timesValue = parseGreaterThanZeroNum(timesValueNode);
                 yield new PatternRepresentation.Quantifier.NTimes(timesValue);
             }
             default -> throw new IllegalArgumentException("Unknown quantifier: " + quantNode.content());
         };
+    }
+
+    private static int parseGreaterThanZeroNum(Tree<String> numNode) {
+        // Traverse and build the number by visiting all leaf nodes and extracting their content
+        StringBuilder numberBuilder = new StringBuilder();
+        for (String leafNode : numNode.visitLeaves()) {
+            numberBuilder.append(leafNode);
+        }
+        return Integer.parseInt(numberBuilder.toString());
     }
 }
