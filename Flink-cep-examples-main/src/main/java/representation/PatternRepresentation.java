@@ -73,6 +73,13 @@ public record PatternRepresentation(
                 return "NTimes { n=" + n + " }";
             }
         }
+
+        record FromToTimes(int from, int to) implements Quantifier {
+            @Override
+            public String toString() {
+                return "FromToTimes { from=" + from + " to=" + to + " }";
+            }
+        }
     }
 
     public record Condition(

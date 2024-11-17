@@ -3,6 +3,8 @@ package representation.mappers.treerepresentationparsers;
 import io.github.ericmedvet.jgea.core.representation.tree.Tree;
 import representation.PatternRepresentation;
 
+import java.util.Map;
+
 public class QuantifierParser {
 
     public static PatternRepresentation.Quantifier parseQuantifier(Tree<String> quantifierNode) {
@@ -15,6 +17,14 @@ public class QuantifierParser {
                 Tree<String> timesValueNode = quantifierNode.child(1);
                 int timesValue = parseGreaterThanZeroNum(timesValueNode);
                 yield new PatternRepresentation.Quantifier.NTimes(timesValue);
+            }
+            case "range" -> {
+                Tree<String> fromNode = quantifierNode.child(1);
+                Tree<String> toNode = quantifierNode.child(2);
+                int fromValue = parseGreaterThanZeroNum(fromNode);
+                int toValue = parseGreaterThanZeroNum(toNode);
+                // Re-order the two values for a meaningful range
+                yield new PatternRepresentation.Quantifier.FromToTimes(Math.min(fromValue, toValue), Math.max(fromValue, toValue));
             }
             default -> throw new IllegalArgumentException("Unknown quantifier: " + quantNode.content());
         };

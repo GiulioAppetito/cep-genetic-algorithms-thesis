@@ -67,6 +67,10 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
             };
         } else if (event.quantifier() instanceof PatternRepresentation.Quantifier.NTimes nTimes) {
             pattern = pattern.times(nTimes.n());
+        } else if (event.quantifier() instanceof PatternRepresentation.Quantifier.FromToTimes fromToTimes) {
+            int from = fromToTimes.from();
+            int to = fromToTimes.to();
+            pattern = pattern.times(from, to);
         }
 
         // Attach conditions to the pattern

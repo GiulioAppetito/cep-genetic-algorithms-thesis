@@ -66,7 +66,7 @@ public class GrammarBuilder {
 
 
         // Quantifiers
-        grammar.append("<quantifier> ::= oneOrMore | optional | times <greaterThanZeroNum>\n");
+        grammar.append("<quantifier> ::= oneOrMore | optional | times <greaterThanZeroNum> | range <greaterThanZeroNum> <greaterThanZeroNum>\n");
 
         // Number representation
         if (uniqueColumnTypes.contains(DataTypesEnum.LONG) || uniqueColumnTypes.contains(DataTypesEnum.FLOAT)){
