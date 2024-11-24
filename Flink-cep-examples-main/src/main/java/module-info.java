@@ -5,3 +5,4 @@ module flinkCEP.Patterns {
     requires flink.core;
     requires flink.streaming.java;
 }
+
