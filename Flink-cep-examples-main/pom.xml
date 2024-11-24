@@ -109,7 +109,6 @@
 
 	<build>
 		<plugins>
-			<!-- Maven Compiler Plugin -->
 			<!-- ANTLR Plugin -->
 			<plugin>
 				<groupId>org.antlr</groupId>
@@ -129,6 +128,7 @@
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+
 				<artifactId>maven-shade-plugin</artifactId>
 				<version>3.2.4</version>
 				<executions>
