@@ -80,7 +80,8 @@ public class EventProducer {
         }
 
         return env.fromCollection(events)
-                .assignTimestampsAndWatermarks(WatermarkStrategy.<BaseEvent>forMonotonousTimestamps()
+                .assignTimestampsAndWatermarks(
+                        WatermarkStrategy.<BaseEvent>forMonotonousTimestamps()
                         .withTimestampAssigner((event, timestamp) -> event.getTimestamp()));
     }
 }
