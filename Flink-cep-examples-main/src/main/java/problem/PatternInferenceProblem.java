@@ -5,11 +5,13 @@ import events.source.EventProducer;
 import fitness.utils.EventSequenceMatcher;
 import fitness.utils.ScoreCalculator;
 import fitness.utils.TargetSequenceReader;
+
 import io.github.ericmedvet.jgea.core.problem.TotalOrderQualityBasedProblem;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.GrammarBasedProblem;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.StringGrammar;
 import io.github.ericmedvet.jgea.core.representation.tree.Tree;
 import org.apache.flink.cep.pattern.Pattern;
+
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import representation.PatternRepresentation;
