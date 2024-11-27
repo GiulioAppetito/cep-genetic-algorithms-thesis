@@ -31,7 +31,6 @@ public class EventSequenceMatcher {
                     sequence.add(new HashMap<>(event.toMap()));
                 }
                 sequencesSet.add(sequence);
-                System.out.println("[" + type + "] match sequence: " + sequence);
             }
         }
         return sequencesSet;
@@ -40,7 +39,8 @@ public class EventSequenceMatcher {
     // Creates a PatternStream from the keyed or non-keyed DataStream
     private static DataStream<List<BaseEvent>> getMatchedDataStream(DataStream<BaseEvent> inputDataStream, Pattern<BaseEvent, ?> pattern) {
         PatternStream<BaseEvent> patternStream = CEP.pattern(inputDataStream, pattern);
-        return patternStream.select(new PatternToListSelectFunction());
+        DataStream<List<BaseEvent>> resultStream = patternStream.select(new PatternToListSelectFunction());
+        return resultStream;
     }
 
     private static class PatternToListSelectFunction implements PatternSelectFunction<BaseEvent, List<BaseEvent>> {

@@ -28,25 +28,6 @@ public class TreeToRepresentationMapper implements Function<Tree<String>, Patter
         }
 
         PatternRepresentation patternRepresentation = new PatternRepresentation(events, withinClause, keyByClause);
-        validatePatternRepresentation(tree, patternRepresentation);
         return patternRepresentation;
-    }
-
-    private void validatePatternRepresentation(Tree<String> tree, PatternRepresentation patternRepresentation) {
-        System.out.println("Validating Pattern Representation...");
-        if (patternRepresentation.events().size() != countEventNodes(tree)) {
-            System.err.println("Mismatch in number of events between Tree and PatternRepresentation.");
-        }
-    }
-
-    private int countEventNodes(Tree<String> tree) {
-        int count = 0;
-        if ("<event>".equals(tree.content())) {
-            count++;
-        }
-        for (Tree<String> child : tree) {
-            count += countEventNodes(child);
-        }
-        return count;
     }
 }

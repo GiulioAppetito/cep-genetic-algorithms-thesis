@@ -1,6 +1,7 @@
 package problem;
 
 import events.BaseEvent;
+import events.GenericEvent;
 import events.source.EventProducer;
 import fitness.utils.EventSequenceMatcher;
 import fitness.utils.ScoreCalculator;
@@ -12,6 +13,7 @@ import io.github.ericmedvet.jgea.core.representation.grammar.string.StringGramma
 import io.github.ericmedvet.jgea.core.representation.tree.Tree;
 import org.apache.flink.cep.pattern.Pattern;
 
+import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import representation.PatternRepresentation;
@@ -28,6 +30,7 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
     private final Set<List<Map<String, Object>>> targetExtractions;
     private final DataStream<BaseEvent> eventStream;
     private final StringGrammar<String> grammar;
+    private final StreamExecutionEnvironment env;
 
     public PatternInferenceProblem(String configPath) throws Exception {
         // Load configuration properties with path validation
@@ -36,7 +39,7 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
         String csvFilePath = datasetDirPath + getRequiredProperty(config, "csvFileName");
 
         // Initialize Flink environment and load events from CSV
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        this.env = StreamExecutionEnvironment.getExecutionEnvironment();
         this.eventStream = EventProducer.generateEventDataStreamFromCSV(env, csvFilePath);
 
         // Load target sequences for fitness evaluation

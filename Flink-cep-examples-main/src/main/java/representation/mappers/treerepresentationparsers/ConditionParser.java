@@ -39,7 +39,6 @@ public class ConditionParser {
     }
 
     public static PatternRepresentation.Condition parseCondition(Tree<String> conditionNode) {
-        System.out.println("[ConditionParser] Parsing condition node : " + conditionNode);
         String variable = null;
         PatternRepresentation.Condition.Operator operator = null;
         Object value = null;

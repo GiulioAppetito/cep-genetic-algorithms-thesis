@@ -6,7 +6,6 @@ import representation.PatternRepresentation;
 public class ClauseParser {
 
     public static PatternRepresentation.WithinClause parseWithinClause(Tree<String> withinClauseNode) {
-        System.out.println("[ClauseParser] Parsing within clause node: "+ withinClauseNode);
         float duration = ValueParser.parseFNum(withinClauseNode.child(0));
         return new PatternRepresentation.WithinClause(duration);
     }
