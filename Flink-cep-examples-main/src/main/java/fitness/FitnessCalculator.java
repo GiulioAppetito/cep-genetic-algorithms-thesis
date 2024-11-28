@@ -25,13 +25,15 @@ public class FitnessCalculator {
     }
 
     public double calculateFitness(StreamExecutionEnvironment env, DataStream<BaseEvent> inputDataStream, Pattern<BaseEvent, ?> generatedPattern, PatternRepresentation.KeyByClause keyByClause) throws Exception {
+        System.out.println("[FitnessCalculator]: Generated pattern is " + generatedPattern);
+
         // Apply keyBy if keyByClause is present
         DataStream<BaseEvent> streamToUse = (keyByClause != null && keyByClause.key() != null)
                 ? inputDataStream.keyBy(event -> event.toMap().get(keyByClause.key()))
                 : inputDataStream;
 
         // Use EventSequenceMatcher to retrieve the detected sequences
-        Set<List<Map<String, Object>>> detectedSequences = EventSequenceMatcher.collectSequenceMatches(streamToUse, List.of(generatedPattern), "Generated", keyByClause);
+        Set<List<Map<String, Object>>> detectedSequences = EventSequenceMatcher.collectSequenceMatches(env, streamToUse, generatedPattern, "Generated", keyByClause);
 
         // Use ScoreCalculator to calculate and return the fitness score
         return ScoreCalculator.calculateFitnessScore(targetSequences, detectedSequences, keyByClause);

@@ -135,7 +135,7 @@ public class TargetSequencesGenerator {
         // Load keyBy field from configuration
         keyByField = config.getProperty("targetKeyByField", null);
 
-        String csvFilePath = datasetDirPath + csvFileName;
+        String csvFilePath = "Flink-cep-examples-main/"+datasetDirPath + csvFileName;
 
         // Set up Flink environment and load events from CSV
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();

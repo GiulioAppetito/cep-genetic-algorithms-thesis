@@ -4,6 +4,7 @@ import representation.PatternRepresentation;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -18,7 +19,13 @@ public class ScoreCalculator {
                 .filter(targetSeq -> keyedDetectedSequences.stream().anyMatch(detectedSeq -> compareSequences(targetSeq, detectedSeq)))
                 .count();
 
-        return keyedTargetSequences.isEmpty() ? 0.0 : (double) detectedTargetCount / keyedTargetSequences.size() * 100.0;
+        double fitnessScore = keyedTargetSequences.isEmpty() ? 0.0 : (double) detectedTargetCount / keyedTargetSequences.size() * 100.0;
+        System.out.println("[ScoreCalculator] Fitness score: " + fitnessScore);
+        Random random = new Random();
+        double dummyFitnessScore = random.nextDouble();
+        System.out.println("[ScoreCalculator] Dummy fitness score: " + dummyFitnessScore);
+        return fitnessScore;
+        //return fitnessScore;
     }
 
     // Filters sequences to include only the specified key

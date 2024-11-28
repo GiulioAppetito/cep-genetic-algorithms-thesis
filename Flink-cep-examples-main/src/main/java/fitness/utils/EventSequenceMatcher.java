@@ -1,54 +1,93 @@
 package fitness.utils;
 
 import events.BaseEvent;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternSelectFunction;
 import org.apache.flink.cep.PatternStream;
 import org.apache.flink.cep.pattern.Pattern;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamUtils;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import representation.PatternRepresentation;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 public class EventSequenceMatcher {
 
-    public static Set<List<Map<String, Object>>> collectSequenceMatches(DataStream<BaseEvent> inputDataStream, List<Pattern<BaseEvent, ?>> patterns, String type, PatternRepresentation.KeyByClause keyByClause) throws Exception {
-        Set<List<Map<String, Object>>> sequencesSet = new HashSet<>();
+    // Thread-safe set to collect the matched sequences
+    private static final Set<List<Map<String, Object>>> sequencesSet = new CopyOnWriteArraySet<>();
 
-        // Apply keyBy if keyByClause is specified
-        DataStream<BaseEvent> keyedStream = (keyByClause != null && keyByClause.key() != null)
-                ? inputDataStream.keyBy(event -> event.toMap().get(keyByClause.key()))
-                : inputDataStream;
+    /**
+     * Collects matching sequences from the input data stream using the given pattern.
+     */
+    public static Set<List<Map<String, Object>>> collectSequenceMatches(StreamExecutionEnvironment createdEnv, DataStream<BaseEvent> inputDataStream, Pattern<BaseEvent, ?> generatedPattern, String type, PatternRepresentation.KeyByClause keyByClause) throws Exception {
+        System.out.println("[EventSequenceMatcher]: collectSequenceMatches invoked. ");
 
-        for (Pattern<BaseEvent, ?> pattern : patterns) {
-            DataStream<List<BaseEvent>> matchedStream = getMatchedDataStream(keyedStream, pattern);
+        // Apply keyBy if a key is specified in the keyByClause
+        DataStream<BaseEvent> keyedStream = (keyByClause != null && keyByClause.key() != null) ? inputDataStream.keyBy(event -> event.toMap().get(keyByClause.key())) : inputDataStream;
 
-            Iterator<List<BaseEvent>> iterator = DataStreamUtils.collect(matchedStream);
-            while (iterator.hasNext()) {
-                List<Map<String, Object>> sequence = new ArrayList<>();
-                for (BaseEvent event : iterator.next()) {
-                    sequence.add(new HashMap<>(event.toMap()));
-                }
-                sequencesSet.add(sequence);
+        // Create a data stream of matched sequences
+        System.out.println("[EventSequenceMatcher]: getting matched datastream. ");
+        DataStream<List<Map<String, Object>>> matchedStream = getMatchedDataStream(keyedStream, generatedPattern);
+
+        // Map each matched sequence into the shared set and trigger processing
+        System.out.println("[EventSequenceMatcher]: adding sequences to set. ");
+        matchedStream.map(new MapFunction<List<Map<String, Object>>, List<Map<String, Object>>>() {
+            @Override
+            public List<Map<String, Object>> map(List<Map<String, Object>> sequence) {
+                sequencesSet.add(sequence); // Add the matched sequence to the shared set
+                return sequence;
             }
-        }
+        }).addSink(new SinkFunction<List<Map<String, Object>>>() {
+            @Override
+            public void invoke(List<Map<String, Object>> value, Context context) {
+                // No-op sink to trigger Flink execution
+            }
+        });
+
+        // Execute the Flink job
+        System.out.println("[EventSequenceMatcher]: executing pattern application. ");
+        createdEnv.execute("Event Sequence Matcher");
+
+        // Return the collected set of sequences
         return sequencesSet;
     }
 
-    // Creates a PatternStream from the keyed or non-keyed DataStream
-    private static DataStream<List<BaseEvent>> getMatchedDataStream(DataStream<BaseEvent> inputDataStream, Pattern<BaseEvent, ?> pattern) {
+    /**
+     * Creates a data stream of matched sequences for a given pattern.
+     */
+    private static DataStream<List<Map<String, Object>>> getMatchedDataStream(DataStream<BaseEvent> inputDataStream, Pattern<BaseEvent, ?> pattern) {
+        // Create a pattern stream using the input data stream and the pattern
+        System.out.println("[EventSequenceMatcher]: Applying Pattern to inputDataStream. ");
         PatternStream<BaseEvent> patternStream = CEP.pattern(inputDataStream, pattern);
-        DataStream<List<BaseEvent>> resultStream = patternStream.select(new PatternToListSelectFunction());
-        return resultStream;
+        System.out.println("[EventSequenceMatcher]: Selecting stream. ");
+        // Transform the pattern matches into a list of maps
+        return patternStream.select(new PatternToListSelectFunction());
     }
 
-    private static class PatternToListSelectFunction implements PatternSelectFunction<BaseEvent, List<BaseEvent>> {
+    /**
+     * A PatternSelectFunction to convert matches into a list of maps.
+     */
+    private static class PatternToListSelectFunction implements PatternSelectFunction<BaseEvent, List<Map<String, Object>>> {
         @Override
-        public List<BaseEvent> select(Map<String, List<BaseEvent>> match) {
-            List<BaseEvent> collectedEvents = new ArrayList<>();
-            match.values().forEach(collectedEvents::addAll);
-            return collectedEvents;
+        public List<Map<String, Object>> select(Map<String, List<BaseEvent>> match) {
+            System.out.println("[EventSequenceMatcher]: PatternToListSelectFunction invoked. ");
+            // Convert the matched events into a list of maps
+            List<Map<String, Object>> resultSequence = new ArrayList<>();
+
+            // Iterate over all values in the map (which are lists of events)
+            for (List<BaseEvent> events : match.values()) {
+                // Iterate over each event in the list
+                for (BaseEvent event : events) {
+                    // Add the mapped representation of the event to the result list
+                    resultSequence.add(new HashMap<>(event.toMap()));
+                }
+            }
+            System.out.println("[EventSequenceMatcher]: resultSequence = "+ resultSequence);
+            return resultSequence;
         }
     }
+
 }

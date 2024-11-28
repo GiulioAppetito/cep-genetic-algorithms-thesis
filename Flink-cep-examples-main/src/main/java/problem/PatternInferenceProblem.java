@@ -1,19 +1,16 @@
 package problem;
 
 import events.BaseEvent;
-import events.GenericEvent;
 import events.source.EventProducer;
-import fitness.utils.EventSequenceMatcher;
-import fitness.utils.ScoreCalculator;
+import fitness.FitnessCalculator;
 import fitness.utils.TargetSequenceReader;
 
 import io.github.ericmedvet.jgea.core.problem.TotalOrderQualityBasedProblem;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.GrammarBasedProblem;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.StringGrammar;
 import io.github.ericmedvet.jgea.core.representation.tree.Tree;
+import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.cep.pattern.Pattern;
-
-import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import representation.PatternRepresentation;
@@ -31,26 +28,44 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
     private final DataStream<BaseEvent> eventStream;
     private final StringGrammar<String> grammar;
     private final StreamExecutionEnvironment env;
+    private final FitnessCalculator fitnessCalculator;
 
     public PatternInferenceProblem(String configPath) throws Exception {
+        System.out.println("[PatternInferenceProblem]: START.");
         // Load configuration properties with path validation
-        Properties config = loadConfig(configPath);
-        String datasetDirPath = getRequiredProperty(config, "datasetDirPath");
-        String csvFilePath = datasetDirPath + getRequiredProperty(config, "csvFileName");
+        Properties myConfig = loadConfig(configPath);
+        String datasetDirPath = getRequiredProperty(myConfig, "datasetDirPath");
+        String csvFilePath = datasetDirPath + getRequiredProperty(myConfig, "csvFileName");
 
-        // Initialize Flink environment and load events from CSV
+        // Initialize Flink environment
+        System.out.println("[PatternInferenceProblem]: getting env.");
         this.env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+        // Register HashMap and other custom classes for Kryo serialization
+        System.out.println("[PatternInferenceProblem]: setting kryo.");
+        ExecutionConfig config = env.getConfig();
+        config.registerKryoType(java.util.HashMap.class);
+        config.registerKryoType(events.BaseEvent.class);
+        config.registerTypeWithKryoSerializer(events.GenericEvent.class, serializer.GenericEventSerializer.class);
+
+        // Load events from CSV after serializers are registered
+        System.out.println("[PatternInferenceProblem]: generating datastream from EventProducer.");
         this.eventStream = EventProducer.generateEventDataStreamFromCSV(env, csvFilePath);
 
-        // Load target sequences for fitness evaluation
-        TargetSequenceReader targetSequenceReader = new TargetSequenceReader();
-        String targetDatasetPath = getRequiredProperty(config, "targetDatasetPath");
-        this.targetExtractions = targetSequenceReader.readTargetSequencesFromFile(targetDatasetPath);
+        // Load target sequences (to find) for fitness evaluation
+        System.out.println("[PatternInferenceProblem]: retrieving target sequences. ");
+        String targetDatasetPath = getRequiredProperty(myConfig, "targetDatasetPath");
+        this.targetExtractions = TargetSequenceReader.readTargetSequencesFromFile(targetDatasetPath);
 
         // Generate and load grammar from CSV
-        String grammarFilePath = getRequiredProperty(config, "grammarDirPath") + getRequiredProperty(config, "grammarFileName");
+        System.out.println("[PatternInferenceProblem]: generating grammar.");
+        String grammarFilePath = getRequiredProperty(myConfig, "grammarDirPath") + getRequiredProperty(myConfig, "grammarFileName");
         GrammarGenerator.generateGrammar(csvFilePath, grammarFilePath);
         this.grammar = loadGrammar(grammarFilePath);
+
+        System.out.println("[PatternInferenceProblem]: Init fitnessCalculator.");
+        // Initialize FitnessCalculator with configuration properties
+        this.fitnessCalculator = new FitnessCalculator(myConfig);
     }
 
     @Override
@@ -66,18 +81,16 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
                 Pattern<BaseEvent, ?> generatedPattern = new RepresentationToPatternMapper<BaseEvent>().convert(patternRepresentation);
                 PatternRepresentation.KeyByClause keyByClause = patternRepresentation.keyByClause();
 
-                // Use EventSequenceMatcher to get detected sequences, now passing keyByClause
-                Set<List<Map<String, Object>>> detectedSequences = EventSequenceMatcher.collectSequenceMatches(eventStream, List.of(generatedPattern), "Generated", keyByClause);
+                // Calculate fitness using FitnessCalculator
+                double fitness = fitnessCalculator.calculateFitness(env, eventStream, generatedPattern, keyByClause);
+                return fitness;
 
-                // Compute fitness score
-                return ScoreCalculator.calculateFitnessScore(targetExtractions, detectedSequences, keyByClause);
             } catch (Exception e) {
                 e.printStackTrace();
                 return 0.0;
             }
         };
     }
-
 
     @Override
     public StringGrammar<String> getGrammar() {
