@@ -12,4 +12,6 @@ module flinkCEP.Patterns {
     requires merged.jar;
     opens events to kryo;
     opens problem to io.github.ericmedvet.jnb.core;
+
+    opens cep to flink.cep, merged.jar;
 }

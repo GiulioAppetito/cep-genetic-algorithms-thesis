@@ -24,38 +24,22 @@ import java.util.*;
 import java.util.function.Function;
 
 public class PatternInferenceProblem implements GrammarBasedProblem<String, PatternRepresentation>, TotalOrderQualityBasedProblem<PatternRepresentation, Double> {
-    private final Set<List<Map<String, Object>>> targetExtractions;
-    private final DataStream<BaseEvent> eventStream;
+    private final Set<List<Map<String, Object>>> targetSequences;
     private final StringGrammar<String> grammar;
-    private final StreamExecutionEnvironment env;
     private final FitnessCalculator fitnessCalculator;
+    private final String csvFilePath;
 
     public PatternInferenceProblem(String configPath) throws Exception {
         System.out.println("[PatternInferenceProblem]: START.");
         // Load configuration properties with path validation
         Properties myConfig = loadConfig(configPath);
         String datasetDirPath = getRequiredProperty(myConfig, "datasetDirPath");
-        String csvFilePath = datasetDirPath + getRequiredProperty(myConfig, "csvFileName");
-
-        // Initialize Flink environment
-        System.out.println("[PatternInferenceProblem]: getting env.");
-        this.env = StreamExecutionEnvironment.getExecutionEnvironment();
-
-        // Register HashMap and other custom classes for Kryo serialization
-        System.out.println("[PatternInferenceProblem]: setting kryo.");
-        ExecutionConfig config = env.getConfig();
-        config.registerKryoType(java.util.HashMap.class);
-        config.registerKryoType(events.BaseEvent.class);
-        config.registerTypeWithKryoSerializer(events.GenericEvent.class, serializer.GenericEventSerializer.class);
-
-        // Load events from CSV after serializers are registered
-        System.out.println("[PatternInferenceProblem]: generating datastream from EventProducer.");
-        this.eventStream = EventProducer.generateEventDataStreamFromCSV(env, csvFilePath);
+        this.csvFilePath = datasetDirPath + getRequiredProperty(myConfig, "csvFileName");
 
         // Load target sequences (to find) for fitness evaluation
         System.out.println("[PatternInferenceProblem]: retrieving target sequences. ");
         String targetDatasetPath = getRequiredProperty(myConfig, "targetDatasetPath");
-        this.targetExtractions = TargetSequenceReader.readTargetSequencesFromFile(targetDatasetPath);
+        this.targetSequences = TargetSequenceReader.readTargetSequencesFromFile(targetDatasetPath);
 
         // Generate and load grammar from CSV
         System.out.println("[PatternInferenceProblem]: generating grammar.");
@@ -63,9 +47,9 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
         GrammarGenerator.generateGrammar(csvFilePath, grammarFilePath);
         this.grammar = loadGrammar(grammarFilePath);
 
-        System.out.println("[PatternInferenceProblem]: Init fitnessCalculator.");
         // Initialize FitnessCalculator with configuration properties
-        this.fitnessCalculator = new FitnessCalculator(myConfig);
+        System.out.println("[PatternInferenceProblem]: Init fitnessCalculator.");
+        this.fitnessCalculator = new FitnessCalculator(targetSequences);
     }
 
     @Override
@@ -73,16 +57,31 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
         return (v1, v2) -> Double.compare(v2, v1);
     }
 
+    /*
+        This function is called for each individual (i.e. each PatternRepresentation)
+     */
     @Override
     public Function<PatternRepresentation, Double> qualityFunction() {
         return patternRepresentation -> {
             try {
-                // Transform PatternRepresentation to Flink CEP Pattern
+                // Setup execution environment for Flink
+                StreamExecutionEnvironment localEnvironment = StreamExecutionEnvironment.createLocalEnvironment();
+                ExecutionConfig config = localEnvironment.getConfig();
+                config.registerKryoType(java.util.HashMap.class);
+                config.registerKryoType(events.BaseEvent.class);
+                config.registerTypeWithKryoSerializer(events.GenericEvent.class, serializer.GenericEventSerializer.class);
+
+                // Generate original DataStream from the CSV file
+                System.out.println("[PatternInferenceProblem]: generating datastream from EventProducer.");
+                DataStream<BaseEvent> eventStream = EventProducer.generateEventDataStreamFromCSV(localEnvironment, csvFilePath);
+
+                // Convert PatternRepresentation into a Flink CEP Pattern object
+                System.out.println("[PatternInferenceProblem]: PatternRepresentation is "+patternRepresentation);
                 Pattern<BaseEvent, ?> generatedPattern = new RepresentationToPatternMapper<BaseEvent>().convert(patternRepresentation);
                 PatternRepresentation.KeyByClause keyByClause = patternRepresentation.keyByClause();
 
-                // Calculate fitness using FitnessCalculator
-                double fitness = fitnessCalculator.calculateFitness(env, eventStream, generatedPattern, keyByClause);
+                // Calculate fitness using FitnessCalculator and the generated Pattern in CEP
+                double fitness = fitnessCalculator.calculateFitness(localEnvironment, eventStream, generatedPattern, keyByClause);
                 return fitness;
 
             } catch (Exception e) {

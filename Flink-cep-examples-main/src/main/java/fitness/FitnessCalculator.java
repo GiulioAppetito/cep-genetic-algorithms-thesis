@@ -18,13 +18,15 @@ public class FitnessCalculator {
 
     private final Set<List<Map<String, Object>>> targetSequences;
 
-    public FitnessCalculator(Properties config) throws Exception {
-        // Initialize targetSequences from the configuration file
-        String targetDatasetPath = config.getProperty("targetDatasetPath");
-        this.targetSequences = TargetSequenceReader.readTargetSequencesFromFile(targetDatasetPath);
+    public FitnessCalculator(Set<List<Map<String, Object>>> targetSequences) throws Exception {
+        // Initialize targetSequences
+        this.targetSequences = targetSequences;
     }
 
-    public double calculateFitness(StreamExecutionEnvironment env, DataStream<BaseEvent> inputDataStream, Pattern<BaseEvent, ?> generatedPattern, PatternRepresentation.KeyByClause keyByClause) throws Exception {
+    public double calculateFitness(StreamExecutionEnvironment env,
+                                   DataStream<BaseEvent> inputDataStream,
+                                   Pattern<BaseEvent, ?> generatedPattern,
+                                   PatternRepresentation.KeyByClause keyByClause) throws Exception {
         System.out.println("[FitnessCalculator]: Generated pattern is " + generatedPattern);
 
         // Apply keyBy if keyByClause is present
@@ -33,7 +35,8 @@ public class FitnessCalculator {
                 : inputDataStream;
 
         // Use EventSequenceMatcher to retrieve the detected sequences
-        Set<List<Map<String, Object>>> detectedSequences = EventSequenceMatcher.collectSequenceMatches(env, streamToUse, generatedPattern, "Generated", keyByClause);
+        EventSequenceMatcher matcher = new EventSequenceMatcher();
+        Set<List<Map<String, Object>>> detectedSequences = matcher.collectSequenceMatches(env, streamToUse, generatedPattern, "Generated", keyByClause);
 
         // Use ScoreCalculator to calculate and return the fitness score
         return ScoreCalculator.calculateFitnessScore(targetSequences, detectedSequences, keyByClause);

@@ -2,6 +2,7 @@ package cep;
 
 import events.BaseEvent;
 import events.source.EventProducer;
+import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternSelectFunction;
 import org.apache.flink.cep.PatternStream;
@@ -74,7 +75,12 @@ public class TargetSequencesGenerator {
         // Apply keyBy if keyByField is specified
         DataStream<BaseEvent> streamToUse;
         if (keyByField != null && !keyByField.isEmpty()) {
-            streamToUse = inputDataStream.keyBy(event -> event.toMap().get(keyByField));
+            streamToUse = inputDataStream.keyBy(new KeySelector<BaseEvent, Object>() {
+                @Override
+                public Object getKey(BaseEvent event) {
+                    return event.toMap().get(keyByField);
+                }
+            });
         } else {
             streamToUse = inputDataStream;  // No keyBy is applied
         }
@@ -84,27 +90,33 @@ public class TargetSequencesGenerator {
                 PatternStream<BaseEvent> patternStream = CEP.pattern(streamToUse, pattern);
                 DataStream<List<BaseEvent>> matchedStream = patternStream.select(new PatternToListSelectFunction());
 
-                Iterator<List<BaseEvent>> iterator = DataStreamUtils.collect(matchedStream);
-                while (iterator.hasNext()) {
-                    List<BaseEvent> eventsList = iterator.next();
+                try {
+                    Iterator<List<BaseEvent>> iterator = DataStreamUtils.collect(matchedStream);
+                    while (iterator.hasNext()) {
+                        List<BaseEvent> eventsList = iterator.next();
 
-                    // Convert the list of events into a list of maps for easier comparison
-                    List<Map<String, Object>> sequence = new ArrayList<>();
-                    for (BaseEvent event : eventsList) {
-                        sequence.add(new HashMap<>(event.toMap()));
+                        // Convert the list of events into a list of maps for easier comparison
+                        List<Map<String, Object>> sequence = new ArrayList<>();
+                        for (BaseEvent event : eventsList) {
+                            sequence.add(new HashMap<>(event.toMap()));
+                        }
+
+                        sequencesSet.add(sequence);
+                        System.out.println("[Target] match sequence: " + sequence);
+
+                        // Write the sequence to the CSV file
+                        writer.write(sequenceToCsvLine(sequence) + "\n");
                     }
-
-                    sequencesSet.add(sequence);
-                    System.out.println("[Target] match sequence: " + sequence);
-
-                    // Write the sequence to the CSV file
-                    writer.write(sequenceToCsvLine(sequence) + "\n");
+                } catch (Exception e) {
+                    System.err.println("Error processing stream: " + e.getMessage());
+                    e.printStackTrace();
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
 
     private static String sequenceToCsvLine(List<Map<String, Object>> sequence) {
         StringBuilder builder = new StringBuilder();
@@ -135,7 +147,8 @@ public class TargetSequencesGenerator {
         // Load keyBy field from configuration
         keyByField = config.getProperty("targetKeyByField", null);
 
-        String csvFilePath = "Flink-cep-examples-main/"+datasetDirPath + csvFileName;
+        //String csvFilePath =datasetDirPath + csvFileName;
+        String csvFilePath = "C:\\Users\\giuli\\IdeaProjects\\cep-genetic-algorithms-thesis-f\\Flink-cep-examples-main\\src\\main\\resources\\datasets\\sources\\ithaca-sshd-processed-simple.csv";
 
         // Set up Flink environment and load events from CSV
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();

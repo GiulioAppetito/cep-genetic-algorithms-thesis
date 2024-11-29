@@ -24,7 +24,7 @@ public class ScoreCalculator {
         Random random = new Random();
         double dummyFitnessScore = random.nextDouble();
         System.out.println("[ScoreCalculator] Dummy fitness score: " + dummyFitnessScore);
-        return fitnessScore;
+        return dummyFitnessScore;
         //return fitnessScore;
     }
 

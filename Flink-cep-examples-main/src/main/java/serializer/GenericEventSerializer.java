@@ -19,7 +19,7 @@ public class GenericEventSerializer extends Serializer<GenericEvent> {
             // Serializza la mappa degli attributi
             kryo.writeObject(output, new HashMap<>(event.getAttributes()));
         } finally {
-            output.flush(); // Consider removing to avoid unnecessary performance impact
+            output.flush();
         }
     }
 

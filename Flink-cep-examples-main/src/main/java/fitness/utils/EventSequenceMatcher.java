@@ -17,38 +17,42 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class EventSequenceMatcher {
 
     // Thread-safe set to collect the matched sequences
-    private static final Set<List<Map<String, Object>>> sequencesSet = new CopyOnWriteArraySet<>();
+    private final Set<List<Map<String, Object>>> sequencesSet = new CopyOnWriteArraySet<>();
 
     /**
      * Collects matching sequences from the input data stream using the given pattern.
      */
-    public static Set<List<Map<String, Object>>> collectSequenceMatches(StreamExecutionEnvironment createdEnv, DataStream<BaseEvent> inputDataStream, Pattern<BaseEvent, ?> generatedPattern, String type, PatternRepresentation.KeyByClause keyByClause) throws Exception {
-        System.out.println("[EventSequenceMatcher]: collectSequenceMatches invoked. ");
+    public Set<List<Map<String, Object>>> collectSequenceMatches(
+            StreamExecutionEnvironment createdEnv,
+            DataStream<BaseEvent> inputDataStream,
+            Pattern<BaseEvent, ?> generatedPattern,
+            String type,
+            PatternRepresentation.KeyByClause keyByClause) throws Exception {
+
+        System.out.println("[EventSequenceMatcher]: collectSequenceMatches invoked.");
 
         // Apply keyBy if a key is specified in the keyByClause
-        DataStream<BaseEvent> keyedStream = (keyByClause != null && keyByClause.key() != null) ? inputDataStream.keyBy(event -> event.toMap().get(keyByClause.key())) : inputDataStream;
+        DataStream<BaseEvent> keyedStream = (keyByClause != null && keyByClause.key() != null)
+                ? inputDataStream.keyBy(event -> event.toMap().get(keyByClause.key()))
+                : inputDataStream;
 
         // Create a data stream of matched sequences
-        System.out.println("[EventSequenceMatcher]: getting matched datastream. ");
+        System.out.println("[EventSequenceMatcher]: getting matched datastream.");
         DataStream<List<Map<String, Object>>> matchedStream = getMatchedDataStream(keyedStream, generatedPattern);
 
         // Map each matched sequence into the shared set and trigger processing
-        System.out.println("[EventSequenceMatcher]: adding sequences to set. ");
-        matchedStream.map(new MapFunction<List<Map<String, Object>>, List<Map<String, Object>>>() {
-            @Override
-            public List<Map<String, Object>> map(List<Map<String, Object>> sequence) {
-                sequencesSet.add(sequence); // Add the matched sequence to the shared set
-                return sequence;
-            }
-        }).addSink(new SinkFunction<List<Map<String, Object>>>() {
-            @Override
-            public void invoke(List<Map<String, Object>> value, Context context) {
-                // No-op sink to trigger Flink execution
-            }
-        });
+        System.out.println("[EventSequenceMatcher]: adding sequences to set.");
+        matchedStream
+                .map(new CollectToSetFunction(sequencesSet)) // Use a static nested class for MapFunction
+                .addSink(new SinkFunction<List<Map<String, Object>>>() {
+                    @Override
+                    public void invoke(List<Map<String, Object>> value, Context context) {
+                        // No-op sink to trigger Flink execution
+                    }
+                });
 
         // Execute the Flink job
-        System.out.println("[EventSequenceMatcher]: executing pattern application. ");
+        System.out.println("[EventSequenceMatcher]: executing pattern application.");
         createdEnv.execute("Event Sequence Matcher");
 
         // Return the collected set of sequences
@@ -58,12 +62,14 @@ public class EventSequenceMatcher {
     /**
      * Creates a data stream of matched sequences for a given pattern.
      */
-    private static DataStream<List<Map<String, Object>>> getMatchedDataStream(DataStream<BaseEvent> inputDataStream, Pattern<BaseEvent, ?> pattern) {
-        // Create a pattern stream using the input data stream and the pattern
-        System.out.println("[EventSequenceMatcher]: Applying Pattern to inputDataStream. ");
+    private DataStream<List<Map<String, Object>>> getMatchedDataStream(
+            DataStream<BaseEvent> inputDataStream,
+            Pattern<BaseEvent, ?> pattern) {
+
+        System.out.println("[EventSequenceMatcher]: Applying Pattern to inputDataStream.");
         PatternStream<BaseEvent> patternStream = CEP.pattern(inputDataStream, pattern);
-        System.out.println("[EventSequenceMatcher]: Selecting stream. ");
-        // Transform the pattern matches into a list of maps
+
+        System.out.println("[EventSequenceMatcher]: Selecting stream.");
         return patternStream.select(new PatternToListSelectFunction());
     }
 
@@ -73,21 +79,36 @@ public class EventSequenceMatcher {
     private static class PatternToListSelectFunction implements PatternSelectFunction<BaseEvent, List<Map<String, Object>>> {
         @Override
         public List<Map<String, Object>> select(Map<String, List<BaseEvent>> match) {
-            System.out.println("[EventSequenceMatcher]: PatternToListSelectFunction invoked. ");
             // Convert the matched events into a list of maps
             List<Map<String, Object>> resultSequence = new ArrayList<>();
-
-            // Iterate over all values in the map (which are lists of events)
             for (List<BaseEvent> events : match.values()) {
-                // Iterate over each event in the list
                 for (BaseEvent event : events) {
-                    // Add the mapped representation of the event to the result list
                     resultSequence.add(new HashMap<>(event.toMap()));
                 }
             }
-            System.out.println("[EventSequenceMatcher]: resultSequence = "+ resultSequence);
+
+            //System.out.println("[EventSequenceMatcher]: resultSequence = " + resultSequence);
             return resultSequence;
         }
     }
 
+    /**
+     * A MapFunction to collect matched sequences into a shared set.
+     * This implementation avoids accessing the enclosing class directly.
+     */
+    private static class CollectToSetFunction
+            implements MapFunction<List<Map<String, Object>>, List<Map<String, Object>>> {
+
+        private final Set<List<Map<String, Object>>> targetSet;
+
+        public CollectToSetFunction(Set<List<Map<String, Object>>> targetSet) {
+            this.targetSet = targetSet; // Pass the shared set explicitly
+        }
+
+        @Override
+        public List<Map<String, Object>> map(List<Map<String, Object>> sequence) {
+            targetSet.add(sequence); // Add the matched sequence to the set
+            return sequence;
+        }
+    }
 }
