@@ -10,11 +10,10 @@ public class GenericEvent extends BaseEvent {
 
     @Override
     public Map<String, Object> toMap() {
-        // Crea una nuova mappa modificabile e copia gli attributi esistenti
+        // Create a Map and copy existing attributes
         Map<String, Object> map = new HashMap<>(super.getAttributes());
-        // Aggiungi il timestamp
         map.put("timestamp", timestamp);
-        return map; // Ritorna la nuova mappa
+        return map;
     }
 
 

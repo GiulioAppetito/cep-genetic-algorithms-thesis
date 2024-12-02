@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class BaseEvent {
-    protected final Long timestamp;
+    protected Long timestamp;
     protected final Map<String, Object> attributes;
 
     public BaseEvent(Long timestamp) {

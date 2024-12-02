@@ -27,7 +27,6 @@ public class FitnessCalculator {
                                    DataStream<BaseEvent> inputDataStream,
                                    Pattern<BaseEvent, ?> generatedPattern,
                                    PatternRepresentation.KeyByClause keyByClause) throws Exception {
-        System.out.println("[FitnessCalculator]: Generated pattern is " + generatedPattern);
 
         // Apply keyBy if keyByClause is present
         DataStream<BaseEvent> streamToUse = (keyByClause != null && keyByClause.key() != null)

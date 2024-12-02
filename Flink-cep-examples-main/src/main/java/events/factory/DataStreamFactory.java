@@ -1,9 +1,9 @@
-package events.source;
+package events.factory;
 
 import events.BaseEvent;
 import events.GenericEvent;
 import grammar.utils.CSVTypesExtractor;
-import grammar.types.DataTypesEnum;
+import grammar.datatypes.DataTypesEnum;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -17,9 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class EventProducer {
+public class DataStreamFactory {
 
-    public static DataStream<BaseEvent> generateEventDataStreamFromCSV(StreamExecutionEnvironment env, String csvFilePath) {
+    public static DataStream<BaseEvent> createDataStream(StreamExecutionEnvironment env, String csvFilePath) {
         List<BaseEvent> events = new ArrayList<>();
         try {
             Map<String, DataTypesEnum> columnTypes = CSVTypesExtractor.getColumnTypesFromCSV(csvFilePath);

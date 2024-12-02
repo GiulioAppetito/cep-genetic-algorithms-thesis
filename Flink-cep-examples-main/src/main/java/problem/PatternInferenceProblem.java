@@ -1,7 +1,7 @@
 package problem;
 
 import events.BaseEvent;
-import events.source.EventProducer;
+import events.factory.DataStreamFactory;
 import fitness.FitnessCalculator;
 import fitness.utils.TargetSequenceReader;
 
@@ -30,25 +30,21 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
     private final String csvFilePath;
 
     public PatternInferenceProblem(String configPath) throws Exception {
-        System.out.println("[PatternInferenceProblem]: START.");
         // Load configuration properties with path validation
         Properties myConfig = loadConfig(configPath);
         String datasetDirPath = getRequiredProperty(myConfig, "datasetDirPath");
         this.csvFilePath = datasetDirPath + getRequiredProperty(myConfig, "csvFileName");
 
         // Load target sequences (to find) for fitness evaluation
-        System.out.println("[PatternInferenceProblem]: retrieving target sequences. ");
         String targetDatasetPath = getRequiredProperty(myConfig, "targetDatasetPath");
         this.targetSequences = TargetSequenceReader.readTargetSequencesFromFile(targetDatasetPath);
 
         // Generate and load grammar from CSV
-        System.out.println("[PatternInferenceProblem]: generating grammar.");
         String grammarFilePath = getRequiredProperty(myConfig, "grammarDirPath") + getRequiredProperty(myConfig, "grammarFileName");
         GrammarGenerator.generateGrammar(csvFilePath, grammarFilePath);
         this.grammar = loadGrammar(grammarFilePath);
 
         // Initialize FitnessCalculator with configuration properties
-        System.out.println("[PatternInferenceProblem]: Init fitnessCalculator.");
         this.fitnessCalculator = new FitnessCalculator(targetSequences);
     }
 
@@ -71,12 +67,10 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
                 config.registerKryoType(events.BaseEvent.class);
                 config.registerTypeWithKryoSerializer(events.GenericEvent.class, serializer.GenericEventSerializer.class);
 
-                // Generate original DataStream from the CSV file
-                System.out.println("[PatternInferenceProblem]: generating datastream from EventProducer.");
-                DataStream<BaseEvent> eventStream = EventProducer.generateEventDataStreamFromCSV(localEnvironment, csvFilePath);
+                // Generate original DataStream from the CSV file through a factory
+                DataStream<BaseEvent> eventStream = DataStreamFactory.createDataStream(localEnvironment, csvFilePath);
 
                 // Convert PatternRepresentation into a Flink CEP Pattern object
-                System.out.println("[PatternInferenceProblem]: PatternRepresentation is "+patternRepresentation);
                 Pattern<BaseEvent, ?> generatedPattern = new RepresentationToPatternMapper<BaseEvent>().convert(patternRepresentation);
                 PatternRepresentation.KeyByClause keyByClause = patternRepresentation.keyByClause();
 

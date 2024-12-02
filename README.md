@@ -8,7 +8,7 @@ This project utilizes genetic algorithms to generate and optimize event patterns
 
 - **cep.TargetSequencesGenerator**: Generates target event sequences for testing and evaluation by applying predefined patterns to a stream of events and saving matches to a file.
 
-- **events.source.EventProducer**: Loads events from a CSV file and represents them as a Flink DataStream, allowing for real-time processing of event data.
+- **events.factory.DataStreamFactory**: Loads events from a CSV file and represents them as a Flink DataStream, allowing for real-time processing of event data.
 
 - **fitness.FitnessCalculator**: Main fitness evaluation component, which initializes configuration and calculates the fitness of generated patterns against target sequences. It now delegates sequence matching and scoring to `EventSequenceMatcher` and `FitnessScoreCalculator`.
 

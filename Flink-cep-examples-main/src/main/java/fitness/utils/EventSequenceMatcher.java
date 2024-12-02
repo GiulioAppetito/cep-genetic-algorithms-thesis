@@ -29,19 +29,15 @@ public class EventSequenceMatcher {
             String type,
             PatternRepresentation.KeyByClause keyByClause) throws Exception {
 
-        System.out.println("[EventSequenceMatcher]: collectSequenceMatches invoked.");
-
         // Apply keyBy if a key is specified in the keyByClause
         DataStream<BaseEvent> keyedStream = (keyByClause != null && keyByClause.key() != null)
                 ? inputDataStream.keyBy(event -> event.toMap().get(keyByClause.key()))
                 : inputDataStream;
 
         // Create a data stream of matched sequences
-        System.out.println("[EventSequenceMatcher]: getting matched datastream.");
         DataStream<List<Map<String, Object>>> matchedStream = getMatchedDataStream(keyedStream, generatedPattern);
 
         // Map each matched sequence into the shared set and trigger processing
-        System.out.println("[EventSequenceMatcher]: adding sequences to set.");
         matchedStream
                 .map(new CollectToSetFunction(sequencesSet)) // Use a static nested class for MapFunction
                 .addSink(new SinkFunction<List<Map<String, Object>>>() {
@@ -52,7 +48,6 @@ public class EventSequenceMatcher {
                 });
 
         // Execute the Flink job
-        System.out.println("[EventSequenceMatcher]: executing pattern application.");
         createdEnv.execute("Event Sequence Matcher");
 
         // Return the collected set of sequences
@@ -66,10 +61,7 @@ public class EventSequenceMatcher {
             DataStream<BaseEvent> inputDataStream,
             Pattern<BaseEvent, ?> pattern) {
 
-        System.out.println("[EventSequenceMatcher]: Applying Pattern to inputDataStream.");
         PatternStream<BaseEvent> patternStream = CEP.pattern(inputDataStream, pattern);
-
-        System.out.println("[EventSequenceMatcher]: Selecting stream.");
         return patternStream.select(new PatternToListSelectFunction());
     }
 

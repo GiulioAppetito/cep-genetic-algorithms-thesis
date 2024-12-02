@@ -1,7 +1,7 @@
 package cep;
 
 import events.BaseEvent;
-import events.source.EventProducer;
+import events.factory.DataStreamFactory;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternSelectFunction;
@@ -18,7 +18,7 @@ import java.util.*;
 public class TargetSequencesGenerator {
 
     private static String targetDatasetPath;
-    private static String keyByField;  // Field to store the key for keyBy operation
+    private static String keyByField; // Field to store the key for keyBy operation
 
     public static List<Pattern<BaseEvent, ?>> createTargetPatterns() {
         List<Pattern<BaseEvent, ?>> targetPatterns = new ArrayList<>();
@@ -60,19 +60,15 @@ public class TargetSequencesGenerator {
                     }
                 });
 
-
-        // Add all patterns to the list
         targetPatterns.add(pattern1);
         targetPatterns.add(pattern2);
 
         return targetPatterns;
     }
 
-    // Apply patterns to the DataStream and save matches to a file
     public static void saveMatchesToFile(List<Pattern<BaseEvent, ?>> patterns, DataStream<BaseEvent> inputDataStream) throws Exception {
         Set<List<Map<String, Object>>> sequencesSet = new HashSet<>();
 
-        // Apply keyBy if keyByField is specified
         DataStream<BaseEvent> streamToUse;
         if (keyByField != null && !keyByField.isEmpty()) {
             streamToUse = inputDataStream.keyBy(new KeySelector<BaseEvent, Object>() {
@@ -82,7 +78,7 @@ public class TargetSequencesGenerator {
                 }
             });
         } else {
-            streamToUse = inputDataStream;  // No keyBy is applied
+            streamToUse = inputDataStream;
         }
 
         try (FileWriter writer = new FileWriter(targetDatasetPath)) {
@@ -95,7 +91,6 @@ public class TargetSequencesGenerator {
                     while (iterator.hasNext()) {
                         List<BaseEvent> eventsList = iterator.next();
 
-                        // Convert the list of events into a list of maps for easier comparison
                         List<Map<String, Object>> sequence = new ArrayList<>();
                         for (BaseEvent event : eventsList) {
                             sequence.add(new HashMap<>(event.toMap()));
@@ -103,8 +98,6 @@ public class TargetSequencesGenerator {
 
                         sequencesSet.add(sequence);
                         System.out.println("[Target] match sequence: " + sequence);
-
-                        // Write the sequence to the CSV file
                         writer.write(sequenceToCsvLine(sequence) + "\n");
                     }
                 } catch (Exception e) {
@@ -116,7 +109,6 @@ public class TargetSequencesGenerator {
             e.printStackTrace();
         }
     }
-
 
     private static String sequenceToCsvLine(List<Map<String, Object>> sequence) {
         StringBuilder builder = new StringBuilder();
@@ -136,25 +128,18 @@ public class TargetSequencesGenerator {
     }
 
     public static void main(String[] args) throws Exception {
-        // Load configuration properties from config.properties file
         Properties config = loadConfig("config.properties");
 
-        // Read paths from the configuration
         String datasetDirPath = config.getProperty("datasetDirPath");
         String csvFileName = config.getProperty("csvFileName");
-        targetDatasetPath = config.getProperty("targetDatasetPath", "Flink-cep-examples-main/src/main/resources/datasets/target/targetDataset.csv");
-
-        // Load keyBy field from configuration
+        targetDatasetPath = config.getProperty("targetDatasetPath", "targetDataset.csv");
         keyByField = config.getProperty("targetKeyByField", null);
 
-        //String csvFilePath =datasetDirPath + csvFileName;
-        String csvFilePath = "C:\\Users\\giuli\\IdeaProjects\\cep-genetic-algorithms-thesis-f\\Flink-cep-examples-main\\src\\main\\resources\\datasets\\sources\\ithaca-sshd-processed-simple.csv";
+        String csvFilePath = datasetDirPath + csvFileName;
 
-        // Set up Flink environment and load events from CSV
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        DataStream<BaseEvent> eventStream = EventProducer.generateEventDataStreamFromCSV(env, csvFilePath);
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
+        DataStream<BaseEvent> eventStream = DataStreamFactory.createDataStream(env, csvFilePath);
 
-        // Create target patterns and save matches to a file
         List<Pattern<BaseEvent, ?>> targetPatterns = createTargetPatterns();
         saveMatchesToFile(targetPatterns, eventStream);
     }

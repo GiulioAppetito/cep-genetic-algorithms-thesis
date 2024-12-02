@@ -1,6 +1,6 @@
 package grammar.utils;
 
-import grammar.types.DataTypesEnum;
+import grammar.datatypes.DataTypesEnum;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;

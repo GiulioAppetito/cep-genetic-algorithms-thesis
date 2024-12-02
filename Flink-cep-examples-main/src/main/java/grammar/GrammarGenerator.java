@@ -3,7 +3,7 @@ package grammar;
 import grammar.utils.CSVTypesExtractor;
 import grammar.utils.GrammarBuilder;
 import grammar.utils.GrammarFileWriter;
-import grammar.types.DataTypesEnum;
+import grammar.datatypes.DataTypesEnum;
 
 import java.io.IOException;
 import java.util.List;

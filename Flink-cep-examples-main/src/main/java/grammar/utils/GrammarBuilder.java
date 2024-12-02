@@ -1,6 +1,6 @@
 package grammar.utils;
 
-import grammar.types.DataTypesEnum;
+import grammar.datatypes.DataTypesEnum;
 
 import java.util.List;
 import java.util.Map;

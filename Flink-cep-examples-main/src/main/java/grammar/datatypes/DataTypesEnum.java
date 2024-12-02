@@ -1,4 +1,4 @@
-package grammar.types;
+package grammar.datatypes;
 
 public enum DataTypesEnum {
     STRING,
