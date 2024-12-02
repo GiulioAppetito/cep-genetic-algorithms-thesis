@@ -21,11 +21,7 @@ public class ScoreCalculator {
 
         double fitnessScore = keyedTargetSequences.isEmpty() ? 0.0 : (double) detectedTargetCount / keyedTargetSequences.size() * 100.0;
         System.out.println("[ScoreCalculator] Fitness score: " + fitnessScore);
-        Random random = new Random();
-        double dummyFitnessScore = random.nextDouble();
-        System.out.println("[ScoreCalculator] Dummy fitness score: " + dummyFitnessScore);
-        return dummyFitnessScore;
-        //return fitnessScore;
+        return fitnessScore;
     }
 
     // Filters sequences to include only the specified key
