@@ -14,7 +14,7 @@ import java.util.Map;
 public class RepresentationToPatternMapper<E extends BaseEvent> {
 
     // Converts PatternRepresentation to a Flink Pattern
-    public Pattern<E, ?> convert(PatternRepresentation representation) {
+    public Pattern<E, ?> convert(PatternRepresentation representation, long duration, long numEvents) {
         List<PatternRepresentation.Event> events = representation.events();
         Pattern<E, E> flinkPattern = null;
         Map<String, Integer> eventNameCounts = new HashMap<>(); // Track counts for unique names
@@ -28,7 +28,7 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
             eventNameCounts.put(baseIdentifier, count);
             String uniqueIdentifier = baseIdentifier + "_" + count;
 
-            Pattern<E, E> newPattern = createPatternForEvent(event, uniqueIdentifier); // Use unique identifier
+            Pattern<E, E> newPattern = createPatternForEvent(event, uniqueIdentifier, numEvents); // Use unique identifier
 
             // Initialize with the first event, otherwise chain the events
             if (flinkPattern == null) {
@@ -51,15 +51,16 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
 
         // Apply within clause if specified
         if (representation.withinClause() != null) {
-            flinkPattern = flinkPattern.within(Duration.ofSeconds((long) representation.withinClause().duration()));
+            long actualDuration = Math.min(duration, (long) representation.withinClause().duration());
+            flinkPattern = flinkPattern.within(Duration.ofSeconds(actualDuration));
         }
 
         return flinkPattern;
     }
 
     // Creates a Pattern for a single event, applying any conditions and quantifiers
-    private Pattern<E, E> createPatternForEvent(PatternRepresentation.Event event, String uniqueIdentifier) {
-        AfterMatchSkipStrategy skipStrategy = AfterMatchSkipStrategy.skipPastLastEvent();
+    private Pattern<E, E> createPatternForEvent(PatternRepresentation.Event event, String uniqueIdentifier, long numEvents) {
+        AfterMatchSkipStrategy skipStrategy = AfterMatchSkipStrategy.noSkip();
         Pattern<E, E> pattern = Pattern.<E>begin(uniqueIdentifier, skipStrategy); // Use unique identifier
 
         if (event.quantifier() instanceof PatternRepresentation.Quantifier.ParamFree quantifier) {
@@ -68,11 +69,12 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
                 case OPTIONAL -> pattern.optional();
             };
         } else if (event.quantifier() instanceof PatternRepresentation.Quantifier.NTimes nTimes) {
-            pattern = pattern.times(nTimes.n());
+            long actualTimes = Math.min(nTimes.n(), numEvents);
+            pattern = pattern.times((int)actualTimes);
         } else if (event.quantifier() instanceof PatternRepresentation.Quantifier.FromToTimes fromToTimes) {
             int from = fromToTimes.from();
             int to = fromToTimes.to();
-            pattern = pattern.times(from, to);
+            pattern = pattern.times(Math.min(from, (int)numEvents), Math.min(to, (int)numEvents));
         }
 
         // Attach conditions to the pattern

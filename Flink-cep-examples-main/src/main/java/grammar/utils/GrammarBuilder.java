@@ -28,7 +28,7 @@ public class GrammarBuilder {
 
         // Event identifier and concatenators
         grammar.append("<identifier> ::= event\n");
-        grammar.append("<eConcat> ::= next | followedBy | followedByAny | notNext | notFollowedBy\n");
+        grammar.append("<eConcat> ::= next | followedBy | followedByAny | notNext \n");
 
         // Condition for every field
         grammar.append("<condition> ::= ");

@@ -3,8 +3,10 @@ package problem;
 import cep.TargetSequencesGenerator;
 import events.BaseEvent;
 import events.factory.DataStreamFactory;
+import events.utils.CsvAnalyzer;
 import fitness.FitnessCalculator;
 import fitness.utils.TargetSequenceReader;
+import grammar.GrammarGenerator;
 import io.github.ericmedvet.jgea.core.problem.TotalOrderQualityBasedProblem;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.GrammarBasedProblem;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.StringGrammar;
@@ -25,6 +27,8 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
     private final FitnessCalculator fitnessCalculator;
     private final String csvFilePath;
     private final String targetDatasetPath;
+    private final long duration;
+    private final long numEvents;
 
     public PatternInferenceProblem(String configPath) throws Exception {
         Properties myConfig = loadConfig(configPath);
@@ -32,6 +36,8 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
         String datasetDirPath = getRequiredProperty(myConfig, "datasetDirPath");
         this.csvFilePath = datasetDirPath + getRequiredProperty(myConfig, "csvFileName");
         this.targetDatasetPath = getRequiredProperty(myConfig, "targetDatasetPath");
+        this.duration = CsvAnalyzer.calculateDurationFromCsv(csvFilePath);
+        this.numEvents = CsvAnalyzer.countRowsInCsv(csvFilePath);
 
         // Generate target patterns and save matches to a file
         StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
@@ -46,8 +52,9 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
         // Load target sequences (to find) for fitness evaluation
         this.targetSequences = TargetSequenceReader.readTargetSequencesFromFile(targetDatasetPath);
 
-        // Load grammar and initialize FitnessCalculator
+        // Generate, load grammar and initialize FitnessCalculator
         String grammarFilePath = getRequiredProperty(myConfig, "grammarDirPath") + getRequiredProperty(myConfig, "grammarFileName");
+        GrammarGenerator.generateGrammar(csvFilePath, grammarFilePath);
         this.grammar = loadGrammar(grammarFilePath);
         this.fitnessCalculator = new FitnessCalculator(targetSequences);
     }
@@ -73,7 +80,7 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
 
                 // Calculate fitness of the Pattern
                 return fitnessCalculator.calculateFitness(localEnvironment, eventStream,
-                        new representation.mappers.RepresentationToPatternMapper<BaseEvent>().convert(patternRepresentation),
+                        new representation.mappers.RepresentationToPatternMapper<BaseEvent>().convert(patternRepresentation, duration, numEvents),
                         patternRepresentation.keyByClause());
             } catch (Exception e) {
                 e.printStackTrace();
