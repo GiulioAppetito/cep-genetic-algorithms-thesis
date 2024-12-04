@@ -67,14 +67,14 @@ public record PatternRepresentation(
             ONE_OR_MORE, OPTIONAL
         }
 
-        record NTimes(int n) implements Quantifier {
+        record NTimes(long n) implements Quantifier {
             @Override
             public String toString() {
                 return "NTimes { n=" + n + " }";
             }
         }
 
-        record FromToTimes(int from, int to) implements Quantifier {
+        record FromToTimes(long from, long to) implements Quantifier {
             @Override
             public String toString() {
                 return "FromToTimes { from=" + from + " to=" + to + " }";

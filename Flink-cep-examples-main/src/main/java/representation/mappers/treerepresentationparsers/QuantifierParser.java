@@ -15,14 +15,14 @@ public class QuantifierParser {
             case "times" -> {
                 // Parse the number of times from <greaterThanZeroNum>
                 Tree<String> timesValueNode = quantifierNode.child(1);
-                int timesValue = parseGreaterThanZeroNum(timesValueNode);
+                long timesValue = parseGreaterThanZeroNum(timesValueNode);
                 yield new PatternRepresentation.Quantifier.NTimes(timesValue);
             }
             case "range" -> {
                 Tree<String> fromNode = quantifierNode.child(1);
                 Tree<String> toNode = quantifierNode.child(2);
-                int fromValue = parseGreaterThanZeroNum(fromNode);
-                int toValue = parseGreaterThanZeroNum(toNode);
+                long fromValue = parseGreaterThanZeroNum(fromNode);
+                long toValue = parseGreaterThanZeroNum(toNode);
                 // Re-order the two values for a meaningful range
                 yield new PatternRepresentation.Quantifier.FromToTimes(Math.min(fromValue, toValue), Math.max(fromValue, toValue));
             }
@@ -30,12 +30,12 @@ public class QuantifierParser {
         };
     }
 
-    private static int parseGreaterThanZeroNum(Tree<String> numNode) {
+    private static long parseGreaterThanZeroNum(Tree<String> numNode) {
         // Traverse and build the number by visiting all leaf nodes and extracting their content
         StringBuilder numberBuilder = new StringBuilder();
         for (String leafNode : numNode.visitLeaves()) {
             numberBuilder.append(leafNode);
         }
-        return Integer.parseInt(numberBuilder.toString());
+        return Long.parseLong(numberBuilder.toString());
     }
 }

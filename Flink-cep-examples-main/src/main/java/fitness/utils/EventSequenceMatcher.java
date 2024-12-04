@@ -38,14 +38,7 @@ public class EventSequenceMatcher {
         DataStream<List<Map<String, Object>>> matchedStream = getMatchedDataStream(keyedStream, generatedPattern);
 
         // Map each matched sequence into the shared set and trigger processing
-        matchedStream
-                .map(new CollectToSetFunction(sequencesSet)) // Use a static nested class for MapFunction
-                .addSink(new SinkFunction<List<Map<String, Object>>>() {
-                    @Override
-                    public void invoke(List<Map<String, Object>> value, Context context) {
-                        // No-op sink to trigger Flink execution
-                    }
-                });
+        matchedStream.map(new CollectToSetFunction(sequencesSet)) ;// Use a static nested class for MapFunction
 
         // Execute the Flink job
         createdEnv.execute("Event Sequence Matcher");

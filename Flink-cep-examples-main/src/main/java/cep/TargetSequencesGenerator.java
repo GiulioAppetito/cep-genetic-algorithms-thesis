@@ -23,7 +23,7 @@ public class TargetSequencesGenerator {
         List<Pattern<BaseEvent, ?>> targetPatterns = new ArrayList<>();
         // Define the pattern for 3 or more failed login attempts for a specific IP address within a time interval
         Pattern<BaseEvent, BaseEvent> failedLoginsPattern = Pattern
-                .<BaseEvent>begin("no_alarm", AfterMatchSkipStrategy.noSkip())
+                .<BaseEvent>begin("no_alarm", AfterMatchSkipStrategy.skipToNext())
                 .where(new SimpleCondition<>() {
                     @Override
                     public boolean filter(BaseEvent event) {

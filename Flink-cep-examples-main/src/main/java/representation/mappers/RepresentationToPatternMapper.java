@@ -60,7 +60,7 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
 
     // Creates a Pattern for a single event, applying any conditions and quantifiers
     private Pattern<E, E> createPatternForEvent(PatternRepresentation.Event event, String uniqueIdentifier, long numEvents) {
-        AfterMatchSkipStrategy skipStrategy = AfterMatchSkipStrategy.noSkip();
+        AfterMatchSkipStrategy skipStrategy = AfterMatchSkipStrategy.skipToNext();
         Pattern<E, E> pattern = Pattern.<E>begin(uniqueIdentifier, skipStrategy); // Use unique identifier
 
         if (event.quantifier() instanceof PatternRepresentation.Quantifier.ParamFree quantifier) {
@@ -72,9 +72,9 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
             long actualTimes = Math.min(nTimes.n(), numEvents);
             pattern = pattern.times((int)actualTimes);
         } else if (event.quantifier() instanceof PatternRepresentation.Quantifier.FromToTimes fromToTimes) {
-            int from = fromToTimes.from();
-            int to = fromToTimes.to();
-            pattern = pattern.times(Math.min(from, (int)numEvents), Math.min(to, (int)numEvents));
+            long from = fromToTimes.from();
+            long to = fromToTimes.to();
+            pattern = pattern.times(Math.min((int)from, (int)numEvents), Math.min((int)to, (int)numEvents));
         }
 
         // Attach conditions to the pattern

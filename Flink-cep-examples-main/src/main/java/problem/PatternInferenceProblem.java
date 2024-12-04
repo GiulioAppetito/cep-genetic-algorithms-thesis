@@ -68,12 +68,14 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
     public Function<PatternRepresentation, Double> qualityFunction() {
         return patternRepresentation -> {
             try {
+                System.out.println(patternRepresentation);
                 // Setup local environment for Flink CEP
                 StreamExecutionEnvironment localEnvironment = StreamExecutionEnvironment.createLocalEnvironment();
                 localEnvironment.setParallelism(8); // Set n to the number of available cores
                 ExecutionConfig config = localEnvironment.getConfig();
                 config.registerKryoType(java.util.HashMap.class);
                 config.registerKryoType(BaseEvent.class);
+
 
                 // Create local DataStream from factory
                 DataStream<BaseEvent> eventStream = DataStreamFactory.createDataStream(localEnvironment, csvFilePath);
