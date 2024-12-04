@@ -53,7 +53,7 @@ public class GrammarBuilder {
         grammar.append(keyByJoiner.toString()).append("\n");
 
         // Operators for each data type
-        if (uniqueColumnTypes.contains(DataTypesEnum.INT) || uniqueColumnTypes.contains(DataTypesEnum.LONG) || uniqueColumnTypes.contains(DataTypesEnum.FLOAT)) {
+        if (uniqueColumnTypes.contains(DataTypesEnum.INT) || uniqueColumnTypes.contains(DataTypesEnum.LONG) || uniqueColumnTypes.contains(DataTypesEnum.DOUBLE)) {
             grammar.append("<opNum> ::= equal | notEqual | lt | gt\n");
         }
         if (uniqueColumnTypes.contains(DataTypesEnum.BOOLEAN)) {
@@ -69,7 +69,7 @@ public class GrammarBuilder {
         grammar.append("<quantifier> ::= oneOrMore | optional | times <greaterThanZeroNum> | range <greaterThanZeroNum> <greaterThanZeroNum>\n");
 
         // Number representation
-        if (uniqueColumnTypes.contains(DataTypesEnum.LONG) || uniqueColumnTypes.contains(DataTypesEnum.FLOAT)){
+        if (uniqueColumnTypes.contains(DataTypesEnum.LONG) || uniqueColumnTypes.contains(DataTypesEnum.DOUBLE)){
             grammar.append("<fNum> ::= + <digit> . <digit> <digit> E <digit> | - <digit> . <digit> <digit> E <digit> | + <digit> . <digit> <digit> E - <digit> | - <digit> . <digit> <digit> E - <digit>\n");
         }
         grammar.append("<digit> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9\n");
@@ -95,7 +95,7 @@ public class GrammarBuilder {
 
     private static String generateConditionForType(String column, DataTypesEnum type, Map<String, Set<String>> uniqueStringValues) {
         return switch (type) {
-            case INT, FLOAT -> String.format("%s <opNum> <fNum>", column);
+            case INT, DOUBLE -> String.format("%s <opNum> <fNum>", column);
             case BOOLEAN -> String.format("%s <opBool> <boolean>", column);
             case STRING -> String.format("%s <opStr> <%sValue>", column, column);
             default -> throw new IllegalArgumentException("Unsupported data type: " + type);

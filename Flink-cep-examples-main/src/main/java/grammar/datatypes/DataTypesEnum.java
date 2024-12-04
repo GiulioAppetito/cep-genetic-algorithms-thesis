@@ -2,7 +2,7 @@ package grammar.datatypes;
 
 public enum DataTypesEnum {
     STRING,
-    FLOAT,
+    DOUBLE,
     INT,
     BOOLEAN,
     LONG

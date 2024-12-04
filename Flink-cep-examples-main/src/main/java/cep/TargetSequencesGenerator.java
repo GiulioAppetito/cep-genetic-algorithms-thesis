@@ -27,12 +27,24 @@ public class TargetSequencesGenerator {
                 .where(new SimpleCondition<>() {
                     @Override
                     public boolean filter(BaseEvent event) {
-                        Object successful_login = event.toMap().get("successful_login");
-                        return Boolean.FALSE.equals(successful_login) ;
+                        Object alarm_status = event.toMap().get("alarm_status");
+                        Object sensor_id = event.toMap().get("sensor_id");
+                        Object temperature = event.toMap().get("temperature");
+
+                        // Verifica se la temperatura è maggiore di 0
+                        boolean temperatureGreaterThanZero = false;
+                        if (temperature instanceof Number) {
+                            temperatureGreaterThanZero = ((Number) temperature).doubleValue() > 0;
+                        }
+
+                        return Boolean.TRUE.equals(alarm_status) ||
+                                sensor_id.equals("SENSOR_007") ||
+                                sensor_id.equals("SENSOR_009") ||
+                                temperatureGreaterThanZero;
                     }
                 })
-                .timesOrMore(2) // At least 3 occurrences
-                .within(Duration.ofSeconds(320)); // Within 60 seconds
+                .timesOrMore(1) // At least 3 occurrences
+                .within(Duration.ofSeconds(5826577)); // Within 60 seconds
 
         targetPatterns.add(failedLoginsPattern);
         return targetPatterns;

@@ -68,7 +68,6 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
     public Function<PatternRepresentation, Double> qualityFunction() {
         return patternRepresentation -> {
             try {
-                System.out.println(patternRepresentation);
                 // Setup local environment for Flink CEP
                 StreamExecutionEnvironment localEnvironment = StreamExecutionEnvironment.createLocalEnvironment();
                 localEnvironment.setParallelism(8); // Set n to the number of available cores
@@ -81,9 +80,10 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
                 DataStream<BaseEvent> eventStream = DataStreamFactory.createDataStream(localEnvironment, csvFilePath);
 
                 // Calculate fitness of the Pattern
-                return fitnessCalculator.calculateFitness(localEnvironment, eventStream,
+                double fitness =  fitnessCalculator.calculateFitness(localEnvironment, eventStream,
                         new representation.mappers.RepresentationToPatternMapper<BaseEvent>().convert(patternRepresentation, duration, numEvents),
                         patternRepresentation.keyByClause());
+                return fitness;
             } catch (Exception e) {
                 e.printStackTrace();
                 return 0.0;

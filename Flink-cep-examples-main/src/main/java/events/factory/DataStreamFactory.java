@@ -39,7 +39,7 @@ public class DataStreamFactory {
                             String value = record.get(column);
                             switch (entry.getValue()) {
                                 case INT -> event.setAttribute(column, Integer.parseInt(value));
-                                case FLOAT -> event.setAttribute(column, Float.parseFloat(value));
+                                case DOUBLE -> event.setAttribute(column, Double.parseDouble(value));
                                 case LONG -> event.setAttribute(column, Long.parseLong(value));
                                 case BOOLEAN -> event.setAttribute(column, Boolean.parseBoolean(value));
                                 case STRING -> event.setAttribute(column, value);

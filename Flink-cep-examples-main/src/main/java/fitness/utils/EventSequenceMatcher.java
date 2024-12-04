@@ -1,23 +1,20 @@
 package fitness.utils;
 
 import events.BaseEvent;
-import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternSelectFunction;
 import org.apache.flink.cep.PatternStream;
 import org.apache.flink.cep.pattern.Pattern;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+import org.apache.flink.util.CloseableIterator;
 import representation.PatternRepresentation;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class EventSequenceMatcher {
-
-    // Thread-safe set to collect the matched sequences
-    private final Set<List<Map<String, Object>>> sequencesSet = new CopyOnWriteArraySet<>();
 
     /**
      * Collects matching sequences from the input data stream using the given pattern.
@@ -37,14 +34,16 @@ public class EventSequenceMatcher {
         // Create a data stream of matched sequences
         DataStream<List<Map<String, Object>>> matchedStream = getMatchedDataStream(keyedStream, generatedPattern);
 
-        // Map each matched sequence into the shared set and trigger processing
-        matchedStream.map(new CollectToSetFunction(sequencesSet)) ;// Use a static nested class for MapFunction
+        // Collect matched sequences using executeAndCollect()
+        Set<List<Map<String, Object>>> detectedSequences = new HashSet<>();
 
-        // Execute the Flink job
-        createdEnv.execute("Event Sequence Matcher");
-
-        // Return the collected set of sequences
-        return sequencesSet;
+        try (CloseableIterator<List<Map<String, Object>>> iterator = matchedStream.executeAndCollect()) {
+            while (iterator.hasNext()) {
+                List<Map<String, Object>> sequence = iterator.next();
+                detectedSequences.add(sequence);
+            }
+        }
+        return detectedSequences;
     }
 
     /**
@@ -71,29 +70,7 @@ public class EventSequenceMatcher {
                     resultSequence.add(new HashMap<>(event.toMap()));
                 }
             }
-
-            //System.out.println("[EventSequenceMatcher]: resultSequence = " + resultSequence);
             return resultSequence;
-        }
-    }
-
-    /**
-     * A MapFunction to collect matched sequences into a shared set.
-     * This implementation avoids accessing the enclosing class directly.
-     */
-    private static class CollectToSetFunction
-            implements MapFunction<List<Map<String, Object>>, List<Map<String, Object>>> {
-
-        private final Set<List<Map<String, Object>>> targetSet;
-
-        public CollectToSetFunction(Set<List<Map<String, Object>>> targetSet) {
-            this.targetSet = targetSet; // Pass the shared set explicitly
-        }
-
-        @Override
-        public List<Map<String, Object>> map(List<Map<String, Object>> sequence) {
-            targetSet.add(sequence); // Add the matched sequence to the set
-            return sequence;
         }
     }
 }

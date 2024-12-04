@@ -43,9 +43,14 @@ public class TargetSequenceReader {
             return Boolean.parseBoolean(value);
         }
         try {
-            return Long.parseLong(value);
+            // Rileva numeri decimali con precisione esatta
+            if (value.contains(".")) {
+                return Double.valueOf(value); // Usa Double invece di Float
+            }
+            return Long.valueOf(value); // Per numeri interi
         } catch (NumberFormatException e) {
-            return value;
+            return value; // Tratta come stringa se non è un numero
         }
     }
+
 }

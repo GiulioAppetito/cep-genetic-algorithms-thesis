@@ -27,8 +27,8 @@ public class CSVTypesExtractor {
                     String value = record.get(column);
                     DataTypesEnum currentType = inferType(value);
                     columnTypes.merge(column, currentType, (existingType, newType) -> {
-                        if (existingType == DataTypesEnum.INT && newType == DataTypesEnum.FLOAT) {
-                            return DataTypesEnum.FLOAT;
+                        if (existingType == DataTypesEnum.INT && newType == DataTypesEnum.DOUBLE) {
+                            return DataTypesEnum.DOUBLE;
                         }
                         return existingType == newType ? existingType : DataTypesEnum.STRING;
                     });
@@ -56,7 +56,7 @@ public class CSVTypesExtractor {
 
     private static DataTypesEnum inferType(String value) {
         if (value.matches("-?\\d+")) return DataTypesEnum.INT;
-        else if (value.matches("-?\\d*\\.\\d+([eE][-+]?\\d+)?")) return DataTypesEnum.FLOAT;
+        else if (value.matches("-?\\d*\\.\\d+([eE][-+]?\\d+)?")) return DataTypesEnum.DOUBLE;
         else if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")) return DataTypesEnum.BOOLEAN;
         else return DataTypesEnum.STRING;
     }
