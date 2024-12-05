@@ -7,6 +7,7 @@ import org.apache.flink.cep.PatternSelectFunction;
 import org.apache.flink.cep.PatternStream;
 import org.apache.flink.cep.nfa.aftermatch.AfterMatchSkipStrategy;
 import org.apache.flink.cep.pattern.Pattern;
+import org.apache.flink.cep.pattern.conditions.IterativeCondition;
 import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamUtils;
@@ -22,31 +23,33 @@ public class TargetSequencesGenerator {
     public static List<Pattern<BaseEvent, ?>> createTargetPatterns() {
         List<Pattern<BaseEvent, ?>> targetPatterns = new ArrayList<>();
         // Define the pattern for 3 or more failed login attempts for a specific IP address within a time interval
-        Pattern<BaseEvent, BaseEvent> failedLoginsPattern = Pattern
-                .<BaseEvent>begin("no_alarm", AfterMatchSkipStrategy.skipToNext())
+        Pattern<BaseEvent, ?> eventPattern = Pattern
+                .<BaseEvent>begin("first_event")
                 .where(new SimpleCondition<>() {
                     @Override
                     public boolean filter(BaseEvent event) {
-                        Object alarm_status = event.toMap().get("alarm_status");
-                        Object sensor_id = event.toMap().get("sensor_id");
-                        Object temperature = event.toMap().get("temperature");
+                        Map<String, Object> eventMap = event.toMap();
+                        Object alarmStatus = eventMap.get("alarm_status");
+                        Object temperature = eventMap.get("temperature");
 
-                        // Verifica se la temperatura è maggiore di 0
-                        boolean temperatureGreaterThanZero = false;
-                        if (temperature instanceof Number) {
-                            temperatureGreaterThanZero = ((Number) temperature).doubleValue() > 0;
-                        }
-
-                        return Boolean.TRUE.equals(alarm_status) ||
-                                sensor_id.equals("SENSOR_007") ||
-                                sensor_id.equals("SENSOR_009") ||
-                                temperatureGreaterThanZero;
+                        // Primo evento con alarm_status=True e temperature > 0
+                        return temperature instanceof Number && ((Number) temperature).doubleValue() > 0;
                     }
                 })
-                .timesOrMore(1) // At least 3 occurrences
-                .within(Duration.ofSeconds(5826577)); // Within 60 seconds
+                .next("second_event")
+                .where(new SimpleCondition<>() {
+                    @Override
+                    public boolean filter(BaseEvent event) {
+                        Map<String, Object> eventMap = event.toMap();
+                        Object vibration = eventMap.get("vibration");
 
-        targetPatterns.add(failedLoginsPattern);
+                        // Secondo evento con vibrazione alta e lo stesso sensore
+                        boolean isVibrationHigh = vibration instanceof Number && Math.abs(((Number) vibration).doubleValue()) > 500;
+                        return isVibrationHigh;
+                    }
+                });
+
+        targetPatterns.add(eventPattern);
         return targetPatterns;
     }
 

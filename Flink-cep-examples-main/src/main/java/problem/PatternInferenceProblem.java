@@ -80,9 +80,12 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
                 DataStream<BaseEvent> eventStream = DataStreamFactory.createDataStream(localEnvironment, csvFilePath);
 
                 // Calculate fitness of the Pattern
-                double fitness =  fitnessCalculator.calculateFitness(localEnvironment, eventStream,
+                double fitness =  fitnessCalculator.calculateFitness(
+                        localEnvironment,
+                        eventStream,
                         new representation.mappers.RepresentationToPatternMapper<BaseEvent>().convert(patternRepresentation, duration, numEvents),
-                        patternRepresentation.keyByClause());
+                        patternRepresentation.keyByClause(),
+                        patternRepresentation);
                 return fitness;
             } catch (Exception e) {
                 e.printStackTrace();

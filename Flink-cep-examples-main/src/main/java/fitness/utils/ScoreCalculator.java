@@ -1,5 +1,7 @@
 package fitness.utils;
 
+import representation.PatternRepresentation;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -9,7 +11,8 @@ public class ScoreCalculator {
 
     public static double calculateFitnessScore(
             Set<List<Map<String, Object>>> targetSequences,
-            Set<List<Map<String, Object>>> detectedSequences) {
+            Set<List<Map<String, Object>>> detectedSequences,
+            PatternRepresentation patternRepresentation) {
 
         long detectedTargetCount = 0;
 
@@ -26,7 +29,7 @@ public class ScoreCalculator {
                 ? 0.0
                 : (double) detectedTargetCount / targetSequences.size() * 100.0;
 
-        System.out.println("[ScoreCalculator] Fitness score: " + fitnessScore);
+        System.out.println("[ScoreCalculator] Fitness score: " + fitnessScore+" \n "+patternRepresentation);
         return fitnessScore;
     }
 
