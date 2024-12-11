@@ -1,6 +1,6 @@
 package grammar.utils;
 
-import events.utils.CsvAnalyzer;
+import utils.CsvAnalyzer;
 import grammar.datatypes.DataTypesEnum;
 import grammar.datatypes.GrammarTypes;
 

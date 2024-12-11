@@ -3,7 +3,7 @@ package problem;
 import cep.TargetSequencesGenerator;
 import events.BaseEvent;
 import events.factory.DataStreamFactory;
-import events.utils.CsvAnalyzer;
+import utils.CsvAnalyzer;
 import fitness.FitnessCalculator;
 import fitness.utils.TargetSequenceReader;
 import grammar.GrammarGenerator;
@@ -76,7 +76,6 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
                 //System.out.println(ColoredText.YELLOW"Invoked qualityFunction of "+patternRepresentation);
                 // Setup local environment for Flink CEP
                 StreamExecutionEnvironment localEnvironment = StreamExecutionEnvironment.createLocalEnvironment();
-                System.out.println(localEnvironment.getTransformations());
                 ExecutionConfig config = localEnvironment.getConfig();
                 config.registerKryoType(java.util.HashMap.class);
                 config.registerKryoType(BaseEvent.class);

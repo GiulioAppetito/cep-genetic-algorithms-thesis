@@ -5,13 +5,15 @@ import utils.ColoredText;
 
 import java.util.*;
 
+import static utils.Utils.loadConfig;
+
 public class ScoreCalculator {
 
     public static double calculateFitnessScore(
             Set<List<Map<String, Object>>> targetSequences,
             Set<List<Map<String, Object>>> detectedSequences,
             PatternRepresentation patternRepresentation,
-            double beta) {
+            double beta) throws Exception {
 
         Set<String> serializedTargetSequences = serializeSequences(targetSequences);
         Set<String> serializedDetectedSequences = serializeSequences(detectedSequences);
@@ -51,8 +53,12 @@ public class ScoreCalculator {
                 ? 0.0
                 : (1 + betaSquared) * (precision * recall) / ((betaSquared * precision) + recall);
 
-        System.out.println(ColoredText.LIGHT_GRAY + patternRepresentation + ColoredText.RESET + ColoredText.ORANGE + "[ScoreCalculator] Precision: " + precision + ", Recall: " + recall + ", F" + beta + "-Score: " + fBetaScore + "\n" + ColoredText.RESET);
-
+        // Print individual and its fitness
+        Properties myConfig = loadConfig("src/main/resources/config.properties");
+        String printIndividuals = utils.Utils.getRequiredProperty(myConfig, "printIndividuals");
+        if (printIndividuals.equals("true")){
+            System.out.println(ColoredText.LIGHT_GRAY + patternRepresentation + ColoredText.RESET + ColoredText.ORANGE + "[ScoreCalculator] Precision: " + precision + ", Recall: " + recall + ", F" + beta + "-Score: " + fBetaScore + "\n" + ColoredText.RESET);
+        }
         return fBetaScore;
     }
 
