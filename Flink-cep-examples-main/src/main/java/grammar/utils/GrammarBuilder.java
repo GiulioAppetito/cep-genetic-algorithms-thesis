@@ -1,22 +1,52 @@
 package grammar.utils;
 
+import events.utils.CsvAnalyzer;
 import grammar.datatypes.DataTypesEnum;
+import grammar.datatypes.GrammarTypes;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringJoiner;
+import java.util.*;
+
+import static utils.Utils.loadConfig;
 
 public class GrammarBuilder {
 
-    public static String buildGrammar(Map<String, DataTypesEnum> columnTypes, Map<String, Set<String>> uniqueStringValues, List<DataTypesEnum> uniqueColumnTypes) {
+    public static String buildGrammar(Map<String, DataTypesEnum> columnTypes,
+                                      Map<String, Set<String>> uniqueStringValues,
+                                      List<DataTypesEnum> uniqueColumnTypes,
+                                      GrammarTypes grammarType,
+                                      String csvFilePath) throws Exception {
         StringBuilder grammar = new StringBuilder();
         System.out.println("[GrammarBuilder] uniqueColumnTypes : "+ uniqueColumnTypes);
+
+        // Max value BOUNDED_NUM
+        final long maxBoundedValue = CsvAnalyzer.calculateDurationFromCsv(csvFilePath);
+        final int maxDigits = String.valueOf(maxBoundedValue).length();
+
         // Define the top-level pattern structure
         grammar.append("<pattern> ::= <events> <withinClause> <key_by> | <events> <withinClause> <key_by> | <events> <withinClause> | <events>\n");
 
         // Define within clause (time-bound constraint)
-        grammar.append("<withinClause> ::= <iNum>\n");
+        if (grammarType.equals(GrammarTypes.BOUNDED_DURATION) || grammarType.equals(GrammarTypes.BOUNDED_DURATION_AND_KEY_BY)) {
+            System.out.println("[GrammarBuilder] maxBoundedValue : " + maxBoundedValue + ".");
+
+            grammar.append("<withinClause> ::= <boundedDuration>\n");
+            grammar.append("<boundedDuration> ::= ");
+
+            for (int i = 1; i <= maxDigits; i++) {
+                grammar.append("<digit>");
+                for (int j = 1; j < i; j++) {
+                    grammar.append(" <digit>");
+                }
+                if (i < maxDigits) {
+                    grammar.append(" | ");
+                }
+            }
+            grammar.append("\n");
+        } if (grammarType.equals(GrammarTypes.UNBOUNDED)) {
+            System.out.println("[GrammarBuilder] Unbounded duration.");
+            grammar.append("<withinClause> ::= <iNum>\n");
+        }
+
 
         // Define events sequence with strict/relaxed contiguity options
         grammar.append("<events> ::= <event> | <event> <eConcat> <events>\n");
@@ -42,15 +72,23 @@ public class GrammarBuilder {
         grammar.append(conditionJoiner.toString()).append("\n");
 
         // key_by operator definition
-        grammar.append("<key_by> ::= ");
-        StringJoiner keyByJoiner = new StringJoiner(" | ");
-        for (Map.Entry<String, DataTypesEnum> entry : columnTypes.entrySet()) {
-            if (!entry.getKey().equals("timestamp")) {
-                // Doesn't key_by streams on timestamps
-                keyByJoiner.add(entry.getKey());
+        if (grammarType.equals(GrammarTypes.BOUNDED_KEY_BY) || grammarType.equals(GrammarTypes.BOUNDED_DURATION_AND_KEY_BY)){
+            Properties myConfig = loadConfig("src/main/resources/config.properties");
+            String keyByField = utils.Utils.getRequiredProperty(myConfig, "targetKeyByField");
+            System.out.println("[GrammarBuilder] Bounded key by:"+keyByField);
+            grammar.append("<key_by> ::= "+keyByField+"\n");
+        }else{
+            System.out.println("[GrammarBuilder] Unbounded key by.");
+            grammar.append("<key_by> ::= ");
+            StringJoiner keyByJoiner = new StringJoiner(" | ");
+            for (Map.Entry<String, DataTypesEnum> entry : columnTypes.entrySet()) {
+                if (!entry.getKey().equals("timestamp")) {
+                    // Doesn't key_by streams on timestamps
+                    keyByJoiner.add(entry.getKey());
+                }
             }
+            grammar.append(keyByJoiner.toString()).append("\n");
         }
-        grammar.append(keyByJoiner.toString()).append("\n");
 
         // Operators for each data type
         if (uniqueColumnTypes.contains(DataTypesEnum.INT) || uniqueColumnTypes.contains(DataTypesEnum.LONG) || uniqueColumnTypes.contains(DataTypesEnum.DOUBLE)) {

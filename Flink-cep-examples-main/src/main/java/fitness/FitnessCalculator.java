@@ -36,7 +36,10 @@ public class FitnessCalculator {
         EventSequenceMatcher matcher = new EventSequenceMatcher();
         Set<List<Map<String, Object>>> detectedSequences = matcher.collectSequenceMatches(env, streamToUse, generatedPattern, "Generated", keyByClause);
 
-        // Use ScoreCalculator to calculate and return the fitness score
-        return ScoreCalculator.calculateFitnessScore(targetSequences, detectedSequences, patternRepresentation);
+        /*
+         Use ScoreCalculator to calculate and return the fitness score
+         */
+        double beta = 1; // Beta value for Fβ score; beta is chosen such that recall is considered beta times as important as precision
+        return ScoreCalculator.calculateFitnessScore(targetSequences, detectedSequences, patternRepresentation, beta);
     }
 }

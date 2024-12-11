@@ -7,6 +7,7 @@ import events.utils.CsvAnalyzer;
 import fitness.FitnessCalculator;
 import fitness.utils.TargetSequenceReader;
 import grammar.GrammarGenerator;
+import grammar.datatypes.GrammarTypes;
 import io.github.ericmedvet.jgea.core.problem.TotalOrderQualityBasedProblem;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.GrammarBasedProblem;
 import io.github.ericmedvet.jgea.core.representation.grammar.string.StringGrammar;
@@ -17,9 +18,10 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import representation.PatternRepresentation;
 import representation.mappers.TreeToRepresentationMapper;
 
-import java.io.FileInputStream;
 import java.util.*;
 import java.util.function.Function;
+
+import static utils.Utils.*;
 
 public class PatternInferenceProblem implements GrammarBasedProblem<String, PatternRepresentation>, TotalOrderQualityBasedProblem<PatternRepresentation, Double> {
     private final Set<List<Map<String, Object>>> targetSequences;
@@ -40,7 +42,7 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
         this.numEvents = CsvAnalyzer.countRowsInCsv(csvFilePath);
 
         // Generate target patterns and save matches to a file
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironment();
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         DataStream<BaseEvent> eventStream = DataStreamFactory.createDataStream(env, csvFilePath);
         TargetSequencesGenerator.saveMatchesToFile(
                 TargetSequencesGenerator.createTargetPatterns(),
@@ -54,7 +56,10 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
 
         // Generate, load grammar and initialize FitnessCalculator
         String grammarFilePath = getRequiredProperty(myConfig, "grammarDirPath") + getRequiredProperty(myConfig, "grammarFileName");
-        GrammarGenerator.generateGrammar(csvFilePath, grammarFilePath);
+        String type = getRequiredProperty(myConfig, "grammarType");
+        GrammarTypes grammarType = GrammarTypes.valueOf(type);
+
+        GrammarGenerator.generateGrammar(csvFilePath, grammarFilePath, grammarType);
         this.grammar = loadGrammar(grammarFilePath);
         this.fitnessCalculator = new FitnessCalculator(targetSequences);
     }
@@ -68,9 +73,10 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
     public Function<PatternRepresentation, Double> qualityFunction() {
         return patternRepresentation -> {
             try {
+                //System.out.println(ColoredText.YELLOW"Invoked qualityFunction of "+patternRepresentation);
                 // Setup local environment for Flink CEP
                 StreamExecutionEnvironment localEnvironment = StreamExecutionEnvironment.createLocalEnvironment();
-                localEnvironment.setParallelism(8); // Set n to the number of available cores
+                System.out.println(localEnvironment.getTransformations());
                 ExecutionConfig config = localEnvironment.getConfig();
                 config.registerKryoType(java.util.HashMap.class);
                 config.registerKryoType(BaseEvent.class);
@@ -86,6 +92,7 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
                         new representation.mappers.RepresentationToPatternMapper<BaseEvent>().convert(patternRepresentation, duration, numEvents),
                         patternRepresentation.keyByClause(),
                         patternRepresentation);
+
                 return fitness;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -104,25 +111,4 @@ public class PatternInferenceProblem implements GrammarBasedProblem<String, Patt
         return new TreeToRepresentationMapper();
     }
 
-    private static Properties loadConfig(String filePath) throws Exception {
-        Properties config = new Properties();
-        try (FileInputStream input = new FileInputStream(filePath)) {
-            config.load(input);
-        }
-        return config;
-    }
-
-    private static String getRequiredProperty(Properties config, String propertyName) {
-        String value = config.getProperty(propertyName);
-        if (value == null) {
-            throw new IllegalArgumentException("Missing required configuration property: " + propertyName);
-        }
-        return value;
-    }
-
-    private static StringGrammar<String> loadGrammar(String filePath) throws Exception {
-        try (FileInputStream grammarStream = new FileInputStream(filePath)) {
-            return StringGrammar.load(grammarStream);
-        }
-    }
 }

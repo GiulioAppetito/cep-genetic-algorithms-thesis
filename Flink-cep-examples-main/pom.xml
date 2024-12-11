@@ -10,15 +10,20 @@
     <name>Flink CEP Example</name>
     <url>http://www.myorganization.org</url>
 
-    <!-- Repositories Section to Resolve Dependencies -->
+    <!-- Repositories Section -->
     <repositories>
-        <!-- Add Sonatype OSSRH Snapshot Repository -->
+        <!-- Retain only if needed for other dependencies -->
         <repository>
             <id>ossrh-snapshots</id>
             <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
+        </repository>
+        <!-- Central repository for Spark -->
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2/</url>
         </repository>
     </repositories>
 
@@ -27,6 +32,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <jgea.version>2.7.1-SNAPSHOT</jgea.version>
         <flink.version>1.20.0</flink.version>
+        <spark.version>3.4.1</spark.version>
     </properties>
 
     <dependencies>
@@ -93,6 +99,7 @@
             <version>0.10.0</version>
         </dependency>
 
+
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-shaded-asm-9</artifactId>
@@ -105,10 +112,13 @@
             <version>2.0.16</version>
         </dependency>
 
+
+
     </dependencies>
 
     <build>
         <plugins>
+            <!-- Maven Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -118,6 +128,7 @@
                     <target>21</target>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 </project>

@@ -7,14 +7,13 @@ import org.apache.flink.cep.PatternSelectFunction;
 import org.apache.flink.cep.PatternStream;
 import org.apache.flink.cep.nfa.aftermatch.AfterMatchSkipStrategy;
 import org.apache.flink.cep.pattern.Pattern;
-import org.apache.flink.cep.pattern.conditions.IterativeCondition;
 import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamUtils;
+import utils.ColoredText;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.Duration;
 import java.util.*;
 
 public class TargetSequencesGenerator {
@@ -23,42 +22,25 @@ public class TargetSequencesGenerator {
     public static List<Pattern<BaseEvent, ?>> createTargetPatterns() {
         List<Pattern<BaseEvent, ?>> targetPatterns = new ArrayList<>();
         // Define the pattern for 3 or more failed login attempts for a specific IP address within a time interval
-        Pattern<BaseEvent, ?> eventPattern = Pattern
-                .<BaseEvent>begin("first_event")
-                .where(new SimpleCondition<>() {
-                    @Override
-                    public boolean filter(BaseEvent event) {
-                        Map<String, Object> eventMap = event.toMap();
-                        Object alarmStatus = eventMap.get("alarm_status");
-                        Object temperature = eventMap.get("temperature");
+        AfterMatchSkipStrategy skipStrategy = AfterMatchSkipStrategy.noSkip();
+        Pattern<BaseEvent, ?> loginPattern = Pattern.<BaseEvent>begin("first_event", skipStrategy).where(new SimpleCondition<>() {
+            @Override
+            public boolean filter(BaseEvent event) {
+                Map<String, Object> eventMap = event.toMap();
+                Object alarm_status = eventMap.get("alarm_status");
 
-                        // Primo evento con alarm_status=True e temperature > 0
-                        return temperature instanceof Number && ((Number) temperature).doubleValue() > 0;
-                    }
-                })
-                .next("second_event")
-                .where(new SimpleCondition<>() {
-                    @Override
-                    public boolean filter(BaseEvent event) {
-                        Map<String, Object> eventMap = event.toMap();
-                        Object vibration = eventMap.get("vibration");
+                // Primo evento con successful_login=True
+                return Boolean.FALSE.equals(alarm_status);
+            }
+        }).oneOrMore();
 
-                        // Secondo evento con vibrazione alta e lo stesso sensore
-                        boolean isVibrationHigh = vibration instanceof Number && Math.abs(((Number) vibration).doubleValue()) > 500;
-                        return isVibrationHigh;
-                    }
-                });
-
-        targetPatterns.add(eventPattern);
+        targetPatterns.add(loginPattern);
         return targetPatterns;
     }
 
     // Save matched sequences to a file
-    public static void saveMatchesToFile(List<Pattern<BaseEvent, ?>> patterns, DataStream<BaseEvent> inputDataStream,
-                                         String targetDatasetPath, String keyByField) throws Exception {
-        DataStream<BaseEvent> streamToUse = (keyByField != null && !keyByField.isEmpty())
-                ? inputDataStream.keyBy((KeySelector<BaseEvent, Object>) event -> event.toMap().get(keyByField))
-                : inputDataStream;
+    public static void saveMatchesToFile(List<Pattern<BaseEvent, ?>> patterns, DataStream<BaseEvent> inputDataStream, String targetDatasetPath, String keyByField) throws Exception {
+        DataStream<BaseEvent> streamToUse = (keyByField != null && !keyByField.isEmpty()) ? inputDataStream.keyBy((KeySelector<BaseEvent, Object>) event -> event.toMap().get(keyByField)) : inputDataStream;
 
         try (FileWriter writer = new FileWriter(targetDatasetPath)) {
             for (Pattern<BaseEvent, ?> pattern : patterns) {
@@ -74,6 +56,7 @@ public class TargetSequencesGenerator {
                     }
                     writer.write(sequenceToCsvLine(sequence) + "\n");
                 }
+                System.out.println(ColoredText.PURPLE+"[TargetSequencesGenerator]: Finished to write the target file."+ColoredText.RESET);
             }
         } catch (IOException e) {
             throw new RuntimeException("Error writing matched sequences to file", e);

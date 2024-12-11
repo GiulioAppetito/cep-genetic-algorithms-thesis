@@ -1,5 +1,6 @@
 <pattern> ::= <events> <withinClause> <key_by> | <events> <withinClause> <key_by> | <events> <withinClause> | <events>
-<withinClause> ::= <iNum>
+<withinClause> ::= <boundedDuration>
+<boundedDuration> ::= <digit> | <digit> <digit> | <digit> <digit> <digit> | <digit> <digit> <digit> <digit>
 <events> ::= <event> | <event> <eConcat> <events>
 <event> ::= <identifier> <conditions> <quantifier>
 <conditions> ::= <condition> | <condition> <cConcat> <conditions>
@@ -7,7 +8,7 @@
 <identifier> ::= event
 <eConcat> ::= next | followedBy | followedByAny | notNext 
 <condition> ::= sensor_id <opStr> <sensor_idValue> | alarm_status <opBool> <boolean> | temperature <opNum> <fNum> | location <opStr> <locationValue> | vibration <opNum> <fNum> | speed <opNum> <fNum>
-<key_by> ::= sensor_id | alarm_status | temperature | location | vibration | speed
+<key_by> ::= sensor_id
 <opNum> ::= equal | notEqual | lt | gt
 <opBool> ::= equal | notEqual
 <opStr> ::= equal | notEqual

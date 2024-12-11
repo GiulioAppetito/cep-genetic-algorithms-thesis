@@ -5,6 +5,7 @@ import org.apache.flink.cep.nfa.aftermatch.AfterMatchSkipStrategy;
 import org.apache.flink.cep.pattern.Pattern;
 import representation.PatternRepresentation;
 import representation.mappers.utils.SimpleEventCondition;
+import utils.ColoredText;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -60,7 +61,7 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
 
     // Creates a Pattern for a single event, applying any conditions and quantifiers
     private Pattern<E, E> createPatternForEvent(PatternRepresentation.Event event, String uniqueIdentifier, long numEvents) {
-        AfterMatchSkipStrategy skipStrategy = AfterMatchSkipStrategy.skipToNext();
+        AfterMatchSkipStrategy skipStrategy = AfterMatchSkipStrategy.skipPastLastEvent();
         Pattern<E, E> pattern = Pattern.<E>begin(uniqueIdentifier, skipStrategy); // Use unique identifier
 
         if (event.quantifier() instanceof PatternRepresentation.Quantifier.ParamFree quantifier) {
@@ -72,9 +73,20 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
             long actualTimes = Math.min(nTimes.n(), numEvents);
             pattern = pattern.times((int)actualTimes);
         } else if (event.quantifier() instanceof PatternRepresentation.Quantifier.FromToTimes fromToTimes) {
-            long from = fromToTimes.from();
-            long to = fromToTimes.to();
-            pattern = pattern.times(Math.min((int)from, (int)numEvents), Math.min((int)to, (int)numEvents));
+            long fromTimes = fromToTimes.from();
+            long toTimes = fromToTimes.to();
+            long start = Math.min(fromTimes, toTimes);
+            long finish = Math.max(fromTimes, toTimes);
+
+            // Limit the range of values to dataset's length
+            long from = Math.min((int)start, (int)numEvents);
+            long to =  Math.min((int)finish, (int)numEvents);
+
+            if(to == from){
+                pattern = pattern.times((int)to);
+            }else{
+                pattern = pattern.times((int)from, (int)to);
+            }
         }
 
         // Attach conditions to the pattern
