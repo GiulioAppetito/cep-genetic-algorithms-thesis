@@ -9,6 +9,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.CloseableIterator;
 import representation.PatternRepresentation;
+import utils.CSVWriter;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,7 +25,8 @@ public class EventSequenceMatcher {
             DataStream<BaseEvent> inputDataStream,
             Pattern<BaseEvent, ?> generatedPattern,
             String type,
-            PatternRepresentation.KeyByClause keyByClause) throws Exception {
+            PatternRepresentation.KeyByClause keyByClause,
+            String outputCsvPath) throws Exception {
 
         // Apply keyBy if a key is specified in the keyByClause
         DataStream<BaseEvent> keyedStream = (keyByClause != null && keyByClause.key() != null)
@@ -43,8 +45,13 @@ public class EventSequenceMatcher {
                 detectedSequences.add(sequence);
             }
         }
+
+        // Write detected sequences to a CSV file
+        CSVWriter.writeSequencesToCSV(outputCsvPath, detectedSequences);
+
         return detectedSequences;
     }
+
 
     /**
      * Creates a data stream of matched sequences for a given pattern.

@@ -1,6 +1,4 @@
 <pattern> ::= <events> <withinClause> <key_by> | <events> <withinClause> <key_by> | <events> <withinClause> | <events>
-<withinClause> ::= <boundedDuration>
-<boundedDuration> ::= <digit> | <digit> <digit> | <digit> <digit> <digit> | <digit> <digit> <digit> <digit>
 <events> ::= <event> | <event> <eConcat> <events>
 <event> ::= <identifier> <conditions> <quantifier>
 <conditions> ::= <condition> | <condition> <cConcat> <conditions>
@@ -20,4 +18,4 @@
 <greaterThanZeroNum> ::= <greaterThanZeroDigit> | <greaterThanZeroNum> <digit> | <greaterThanZeroNum> <greaterThanZeroDigit>
 <boolean> ::= true | false
 <sensor_idValue> ::= 'SENSOR_005' | 'SENSOR_006' | 'SENSOR_007' | 'SENSOR_008' | 'SENSOR_009' | 'SENSOR_010' | 'SENSOR_001' | 'SENSOR_002' | 'SENSOR_003' | 'SENSOR_004'
-<locationValue> ::= 'Zone_Echo' | 'Zone_Delta' | 'Zone_Alpha' | 'Zone_Charlie' | 'Zone_Bravo'
+<locationValue> ::= 'Zone_Delta' | 'Zone_Echo' | 'Zone_Alpha' | 'Zone_Charlie' | 'Zone_Bravo'
