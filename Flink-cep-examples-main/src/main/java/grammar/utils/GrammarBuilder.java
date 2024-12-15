@@ -18,7 +18,16 @@ public class GrammarBuilder {
         StringBuilder grammar = new StringBuilder();
         System.out.println("[GrammarBuilder] uniqueColumnTypes : "+ uniqueColumnTypes);
 
-        // Max value BOUNDED_NUM
+        // Load attributes for conditions
+        Properties myConfig = loadConfig("src/main/resources/config.properties");
+        String conditionAttributesConfig = myConfig.getProperty("conditionAttributes", "").trim();
+        Set<String> allowedAttributes = new HashSet<>();
+        if (!conditionAttributesConfig.isEmpty()) {
+            allowedAttributes.addAll(Arrays.asList(conditionAttributesConfig.split(",")));
+        }
+        System.out.println("[GrammarBuilder] allowedAttributes : "+ allowedAttributes);
+
+        // Max value
         final long maxBoundedValue = CsvAnalyzer.calculateDurationFromCsv(csvFilePath);
         final int maxDigits = String.valueOf(maxBoundedValue).length();
 
@@ -60,20 +69,20 @@ public class GrammarBuilder {
         grammar.append("<identifier> ::= event\n");
         grammar.append("<eConcat> ::= next | followedBy | followedByAny | notNext \n");
 
-        // Condition for every field
+        // Condition for selected fields
         grammar.append("<condition> ::= ");
         StringJoiner conditionJoiner = new StringJoiner(" | ");
         for (Map.Entry<String, DataTypesEnum> entry : columnTypes.entrySet()) {
-            if (!entry.getKey().equals("timestamp")) {
-                // Doesn't generate conditions on timestamps
-                conditionJoiner.add(generateConditionForType(entry.getKey(), entry.getValue(), uniqueStringValues));
+            String column = entry.getKey();
+            if (!column.equals("timestamp") && (allowedAttributes.isEmpty() || allowedAttributes.contains(column))) {
+                // Generate conditions only for allowed attributes or all if the list is empty
+                conditionJoiner.add(generateConditionForType(column, entry.getValue(), uniqueStringValues));
             }
         }
         grammar.append(conditionJoiner.toString()).append("\n");
 
         // key_by operator definition
         if (grammarType.equals(GrammarTypes.BOUNDED_KEY_BY) || grammarType.equals(GrammarTypes.BOUNDED_DURATION_AND_KEY_BY)){
-            Properties myConfig = loadConfig("src/main/resources/config.properties");
             String keyByField = utils.Utils.getRequiredProperty(myConfig, "targetKeyByField");
             System.out.println("[GrammarBuilder] Bounded key by:"+keyByField);
             grammar.append("<key_by> ::= "+keyByField+"\n");

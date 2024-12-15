@@ -5,16 +5,24 @@ import grammar.utils.CSVTypesExtractor;
 import grammar.utils.GrammarBuilder;
 import grammar.utils.GrammarFileWriter;
 import grammar.datatypes.DataTypesEnum;
+import java.util.*;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import static utils.Utils.loadConfig;
 
 public class GrammarGenerator {
 
-    public static void generateGrammar(String csvFilePath, String grammarFilePath, GrammarTypes grammarType) throws IOException {
-        Map<String, DataTypesEnum> columnTypes = CSVTypesExtractor.getColumnTypesFromCSV(csvFilePath);
+    public static void generateGrammar(String csvFilePath, String grammarFilePath, GrammarTypes grammarType) throws Exception {
+        // Carica la configurazione
+        Properties myConfig = loadConfig("src/main/resources/config.properties");
+        String conditionAttributesConfig = myConfig.getProperty("conditionAttributes", "").trim();
+        Set<String> allowedAttributes = new HashSet<>();
+        if (!conditionAttributesConfig.isEmpty()) {
+            allowedAttributes.addAll(Arrays.asList(conditionAttributesConfig.split(",")));
+        }
+        System.out.println("[GrammarGenerator] Allowed attributes: " + allowedAttributes);
+
+        // Filtra gli attributi usando allowedAttributes
+        Map<String, DataTypesEnum> columnTypes = CSVTypesExtractor.getColumnTypesFromCSV(csvFilePath, allowedAttributes);
         List<DataTypesEnum> uniqueColumnTypes = columnTypes.values().stream().toList();
         Map<String, Set<String>> uniqueStringValues = CSVTypesExtractor.inferUniqueStringValues(csvFilePath, columnTypes);
 
@@ -27,4 +35,5 @@ public class GrammarGenerator {
         }
         GrammarFileWriter.writeToFile(grammar, grammarFilePath);
     }
+
 }

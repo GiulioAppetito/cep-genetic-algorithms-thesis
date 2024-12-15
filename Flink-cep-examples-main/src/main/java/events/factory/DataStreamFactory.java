@@ -16,16 +16,16 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 import java.io.FileReader;
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DataStreamFactory {
 
     public static DataStream<BaseEvent> createDataStream(StreamExecutionEnvironment env, String csvFilePath) {
         List<BaseEvent> events = new ArrayList<>();
         try {
-            Map<String, DataTypesEnum> columnTypes = CSVTypesExtractor.getColumnTypesFromCSV(csvFilePath);
+            Set<String> allowedAttributes = new HashSet<>(); // Se non vuoi filtri, usa un Set vuoto
+            Map<String, DataTypesEnum> columnTypes = CSVTypesExtractor.getColumnTypesFromCSV(csvFilePath, allowedAttributes);
+
             try (Reader reader = new FileReader(csvFilePath);
                  CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
 

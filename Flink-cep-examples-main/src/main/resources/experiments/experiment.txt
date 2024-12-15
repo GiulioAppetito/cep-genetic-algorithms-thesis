@@ -5,8 +5,7 @@ ea.experiment(
     (solver = (nEval = $nEvals) * [
       ea.s.ga(
         name = "gp";
-        nPop = 100;
-        nPop = 100;
+        nPop = 200;
         representation = ea.r.cfgTree(grammar = ea.grammar.fromProblem(problem = tesi.problem.patternInferenceProblem()));
         mapper = ea.m.grammarTreeBP(problem = tesi.problem.patternInferenceProblem())
       )

@@ -23,16 +23,29 @@ public class TargetSequencesGenerator {
         List<Pattern<BaseEvent, ?>> targetPatterns = new ArrayList<>();
         // Define the pattern for 3 or more failed login attempts for a specific IP address within a time interval
         AfterMatchSkipStrategy skipStrategy = AfterMatchSkipStrategy.noSkip();
-        Pattern<BaseEvent, ?> loginPattern = Pattern.<BaseEvent>begin("first_event", skipStrategy).where(new SimpleCondition<>() {
-            @Override
-            public boolean filter(BaseEvent event) {
-                Map<String, Object> eventMap = event.toMap();
-                Object alarm_status = eventMap.get("alarm_status");
+        Pattern<BaseEvent, ?> loginPattern = Pattern.<BaseEvent>begin("first_event", skipStrategy)
+                .where(new SimpleCondition<>() {
+                    @Override
+                    public boolean filter(BaseEvent event) {
+                        Map<String, Object> eventMap = event.toMap();
+                        Object alarm_status = eventMap.get("alarm_status");
 
-                // Primo evento con successful_login=True
-                return Boolean.FALSE.equals(alarm_status);
-            }
-        }).oneOrMore();
+                        // Primo evento con alarm_status = false
+                        return Boolean.FALSE.equals(alarm_status);
+                    }
+                }).oneOrMore() // Può esserci uno o più eventi con alarm_status = false
+                .next("second_event") // Successivamente, un evento con alarm_status = true
+                .where(new SimpleCondition<>() {
+                    @Override
+                    public boolean filter(BaseEvent event) {
+                        Map<String, Object> eventMap = event.toMap();
+                        Object alarm_status = eventMap.get("alarm_status");
+
+                        // Evento successivo con alarm_status = true
+                        return Boolean.TRUE.equals(alarm_status);
+                    }
+                });
+
 
         targetPatterns.add(loginPattern);
         return targetPatterns;

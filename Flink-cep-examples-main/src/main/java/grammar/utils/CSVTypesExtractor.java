@@ -15,14 +15,20 @@ import java.util.Set;
 
 public class CSVTypesExtractor {
 
-    public static Map<String, DataTypesEnum> getColumnTypesFromCSV(String csvFilePath) throws IOException {
+    public static Map<String, DataTypesEnum> getColumnTypesFromCSV(String csvFilePath, Set<String> allowedAttributes) throws IOException {
         Map<String, DataTypesEnum> columnTypes = new HashMap<>();
         try (Reader reader = new FileReader(csvFilePath);
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
+
             for (CSVRecord record : csvParser) {
                 for (String column : record.toMap().keySet()) {
+                    // Filtra gli attributi in base a allowedAttributes
+                    if (allowedAttributes != null && !allowedAttributes.isEmpty() && !allowedAttributes.contains(column)) {
+                        continue; // Salta gli attributi non consentiti
+                    }
+
                     if (column.equalsIgnoreCase("timestamp")) {
-                        continue;
+                        continue; // Salta il timestamp
                     }
                     String value = record.get(column);
                     DataTypesEnum currentType = inferType(value);
@@ -42,8 +48,12 @@ public class CSVTypesExtractor {
         Map<String, Set<String>> uniqueStringValues = new HashMap<>();
         try (Reader reader = new FileReader(csvFilePath);
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
+
             for (CSVRecord record : csvParser) {
                 for (String column : record.toMap().keySet()) {
+                    if (!columnTypes.containsKey(column)) {
+                        continue; // Salta colonne non presenti in columnTypes (già filtrate da allowedAttributes)
+                    }
                     String value = record.get(column);
                     if (columnTypes.get(column) == DataTypesEnum.STRING) {
                         uniqueStringValues.computeIfAbsent(column, k -> new HashSet<>()).add(value);
