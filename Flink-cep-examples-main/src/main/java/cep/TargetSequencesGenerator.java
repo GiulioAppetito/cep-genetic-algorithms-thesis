@@ -16,13 +16,24 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
+import static utils.Utils.loadConfig;
+
 public class TargetSequencesGenerator {
 
     // Generate a list of patterns
-    public static List<Pattern<BaseEvent, ?>> createTargetPatterns() {
+    public static List<Pattern<BaseEvent, ?>> createTargetPatterns() throws Exception {
         List<Pattern<BaseEvent, ?>> targetPatterns = new ArrayList<>();
         // Define the pattern for 3 or more failed login attempts for a specific IP address within a time interval
-        AfterMatchSkipStrategy skipStrategy = AfterMatchSkipStrategy.noSkip();
+        Properties myConfig = loadConfig("src/main/resources/config.properties");
+        String targetStrategy = myConfig.getProperty("targetStrategy", "");
+        AfterMatchSkipStrategy skipStrategy = switch (targetStrategy) {
+            case "noSkip" -> AfterMatchSkipStrategy.noSkip();
+            case "skipToNext" -> AfterMatchSkipStrategy.skipToNext();
+            case "skipPastLastEvent" -> AfterMatchSkipStrategy.skipPastLastEvent();
+            default -> throw new IllegalArgumentException("Invalid AfterMatchSkipStrategy: " + targetStrategy);
+        };
+        System.out.println(ColoredText.GREEN+"Selected TARGET AfterMatchSkipStrategy: " + skipStrategy+ColoredText.RESET);
+
         Pattern<BaseEvent, ?> loginPattern = Pattern.<BaseEvent>begin("first_event", skipStrategy)
                 .where(new SimpleCondition<>() {
                     @Override

@@ -11,6 +11,9 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+
+import static utils.Utils.loadConfig;
 
 public class RepresentationToPatternMapper<E extends BaseEvent> {
 
@@ -29,7 +32,12 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
             eventNameCounts.put(baseIdentifier, count);
             String uniqueIdentifier = baseIdentifier + "_" + count;
 
-            Pattern<E, E> newPattern = createPatternForEvent(event, uniqueIdentifier, numEvents); // Use unique identifier
+            Pattern<E, E> newPattern = null; // Use unique identifier
+            try {
+                newPattern = createPatternForEvent(event, uniqueIdentifier, numEvents);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
 
             // Initialize with the first event, otherwise chain the events
             if (flinkPattern == null) {
@@ -60,8 +68,15 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
     }
 
     // Creates a Pattern for a single event, applying any conditions and quantifiers
-    private Pattern<E, E> createPatternForEvent(PatternRepresentation.Event event, String uniqueIdentifier, long numEvents) {
-        AfterMatchSkipStrategy skipStrategy = AfterMatchSkipStrategy.noSkip();
+    private Pattern<E, E> createPatternForEvent(PatternRepresentation.Event event, String uniqueIdentifier, long numEvents) throws Exception {
+        Properties myConfig = loadConfig("src/main/resources/config.properties");
+        String individualStrategy = myConfig.getProperty("individualStrategy", "");
+        AfterMatchSkipStrategy skipStrategy = switch (individualStrategy) {
+            case "noSkip" -> AfterMatchSkipStrategy.noSkip();
+            case "skipToNext" -> AfterMatchSkipStrategy.skipToNext();
+            case "skipPastLastEvent" -> AfterMatchSkipStrategy.skipPastLastEvent();
+            default -> throw new IllegalArgumentException("Invalid AfterMatchSkipStrategy: " + individualStrategy);
+        };
         Pattern<E, E> pattern = Pattern.<E>begin(uniqueIdentifier, skipStrategy); // Use unique identifier
 
         if (event.quantifier() instanceof PatternRepresentation.Quantifier.ParamFree quantifier) {

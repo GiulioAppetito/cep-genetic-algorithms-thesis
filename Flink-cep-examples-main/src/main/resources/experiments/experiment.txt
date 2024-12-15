@@ -1,4 +1,4 @@
-$nEvals = [1000]
+$nEvals = [2000]
 
 ea.experiment(
   runs = (randomGenerator = (seed = [1:1:1]) * [m.defaultRG()]) *
