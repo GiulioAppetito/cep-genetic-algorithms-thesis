@@ -45,7 +45,7 @@ public class ScoreCalculator {
 
         double recall = (targetSequences.isEmpty())
                 ? 0.0
-                : (double) truePositives / targetSequences.size();
+                : (double) truePositives / (truePositives+falseNegatives);
 
         // Calculate F-beta-score
         double betaSquared = beta * beta;

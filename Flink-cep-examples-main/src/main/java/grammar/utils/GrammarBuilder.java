@@ -83,7 +83,7 @@ public class GrammarBuilder {
 
         // key_by operator definition
         if (grammarType.equals(GrammarTypes.BOUNDED_KEY_BY) || grammarType.equals(GrammarTypes.BOUNDED_DURATION_AND_KEY_BY)){
-            String keyByField = utils.Utils.getRequiredProperty(myConfig, "targetKeyByField");
+            String keyByField = utils.Utils.getRequiredProperty(myConfig, "keyByField");
             System.out.println("[GrammarBuilder] Bounded key by:"+keyByField);
             grammar.append("<key_by> ::= "+keyByField+"\n");
         }else{
