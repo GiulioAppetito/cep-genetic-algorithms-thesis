@@ -6,6 +6,7 @@ import org.apache.commons.csv.CSVRecord;
 
 import java.io.FileReader;
 import java.io.Reader;
+import java.util.*;
 
 public class CsvAnalyzer {
 
@@ -17,16 +18,14 @@ public class CsvAnalyzer {
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
 
             for (CSVRecord record : csvParser) {
-                // Estrarre il timestamp dalla colonna
                 long timestamp = Long.parseLong(record.get("timestamp"));
-                // Aggiornare i valori minimo e massimo
                 minTimestamp = Math.min(minTimestamp, timestamp);
                 maxTimestamp = Math.max(maxTimestamp, timestamp);
             }
         }
 
-        long duration = (maxTimestamp - minTimestamp)/1000;
-        System.out.println("Duration: "+ duration + " seconds.");
+        long duration = (maxTimestamp - minTimestamp) / 1000;
+        System.out.println("Duration: " + duration + " seconds.");
         return duration;
     }
 
@@ -43,5 +42,44 @@ public class CsvAnalyzer {
 
         System.out.println("Number of rows: " + rowCount);
         return rowCount;
+    }
+
+    public static Set<String> findKeyCandidatesFromCsv(String csvFilePath) throws Exception {
+        Map<String, Set<String>> columnValueSets = new HashMap<>();
+
+        try (Reader reader = new FileReader(csvFilePath);
+             CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT.withFirstRecordAsHeader())) {
+
+            for (CSVRecord record : csvParser) {
+                for (String column : record.toMap().keySet()) {
+                    columnValueSets.putIfAbsent(column, new HashSet<>());
+                    columnValueSets.get(column).add(record.get(column));
+                }
+            }
+        }
+
+        // Choose attributes with more than one value
+        Set<String> keyCandidates = new HashSet<>();
+        for (Map.Entry<String, Set<String>> entry : columnValueSets.entrySet()) {
+            if (entry.getValue().size() > 1) {
+                keyCandidates.add(entry.getKey());
+            }
+        }
+
+        System.out.println("KeyBy Candidates (CSV): " + keyCandidates);
+        return keyCandidates;
+    }
+
+
+    public static void main(String[] args) {
+        String originalCsvFilePath = "C:\\Users\\giuli\\IdeaProjects\\cep-genetic-algorithms-thesis-dev2\\Flink-cep-examples-main\\src\\main\\resources\\datasets\\sources\\sensorData.csv";
+        String targetCsvFilePath = "C:\\Users\\giuli\\IdeaProjects\\cep-genetic-algorithms-thesis-dev2\\Flink-cep-examples-main\\src\\main\\resources\\datasets\\target\\targetDataset.csv";
+
+        try {
+            System.out.println("Analyzing Original Dataset:");
+            findKeyCandidatesFromCsv(originalCsvFilePath);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

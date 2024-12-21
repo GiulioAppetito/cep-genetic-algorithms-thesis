@@ -12,9 +12,11 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamUtils;
 import utils.ColoredText;
 
+import java.awt.*;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.List;
 
 import static utils.Utils.loadConfig;
 
@@ -39,21 +41,21 @@ public class TargetSequencesGenerator {
                     @Override
                     public boolean filter(BaseEvent event) {
                         Map<String, Object> eventMap = event.toMap();
-                        Object alarm_status = eventMap.get("alarm_status");
+                        Object successful_login = eventMap.get("successful_login");
 
-                        // Primo evento con alarm_status = false
-                        return Boolean.FALSE.equals(alarm_status);
+                        // Primo evento con successful_login = false
+                        return Boolean.FALSE.equals(successful_login);
                     }
-                }).oneOrMore() // Può esserci uno o più eventi con alarm_status = false
-                .next("second_event") // Successivamente, un evento con alarm_status = true
+                }).oneOrMore()// Può esserci uno o più eventi con successful_login = false
+                .next("second_event") // Successivamente, un evento con successful_login = true
                 .where(new SimpleCondition<>() {
                     @Override
                     public boolean filter(BaseEvent event) {
                         Map<String, Object> eventMap = event.toMap();
-                        Object alarm_status = eventMap.get("alarm_status");
+                        Object successful_login = eventMap.get("successful_login");
 
-                        // Evento successivo con alarm_status = true
-                        return Boolean.TRUE.equals(alarm_status);
+                        // Evento successivo con successful_login = true
+                        return Boolean.TRUE.equals(successful_login);
                     }
                 });
 
@@ -64,7 +66,25 @@ public class TargetSequencesGenerator {
 
     // Save matched sequences to a file
     public static void saveMatchesToFile(List<Pattern<BaseEvent, ?>> patterns, DataStream<BaseEvent> inputDataStream, String targetDatasetPath, String keyByField) throws Exception {
-        DataStream<BaseEvent> streamToUse = (keyByField != null && !keyByField.isEmpty()) ? inputDataStream.keyBy((KeySelector<BaseEvent, Object>) event -> event.toMap().get(keyByField)) : inputDataStream;
+
+        // Determine whether to use the keyBy function to group the data
+        DataStream<BaseEvent> streamToUse;
+        if (keyByField != null && !keyByField.isEmpty()) {
+            // If a keyByField is provided, apply the keyBy function
+            System.out.println(ColoredText.YELLOW+"[TargetSequenceGenerator] Applying key_by with key: "+keyByField+ColoredText.RESET);
+            streamToUse = inputDataStream.keyBy(new KeySelector<BaseEvent, Object>() {
+                @Override
+                public Object getKey(BaseEvent event) {
+                    // Extract the value of the specified field from the event's map
+                    return event.toMap().get(keyByField);
+                }
+            });
+        } else {
+            // If no keyByField is provided, use the original data stream
+            System.out.println(ColoredText.YELLOW+"[TargetSequenceGenerator] NOT applying key_by."+ColoredText.RESET);
+            streamToUse = inputDataStream;
+        }
+
 
         try (FileWriter writer = new FileWriter(targetDatasetPath)) {
             for (Pattern<BaseEvent, ?> pattern : patterns) {

@@ -23,7 +23,7 @@ import java.util.function.Function;
 
 import static utils.Utils.*;
 
-public class PatternInferenceProblem implements GrammarBasedProblem<String, PatternRepresentation>, TotalOrderQualityBasedProblem<PatternRepresentation, Double> {
+public class  PatternInferenceProblem implements GrammarBasedProblem<String, PatternRepresentation>, TotalOrderQualityBasedProblem<PatternRepresentation, Double> {
     private final Set<List<Map<String, Object>>> targetSequences;
     private final StringGrammar<String> grammar;
     private final FitnessCalculator fitnessCalculator;
