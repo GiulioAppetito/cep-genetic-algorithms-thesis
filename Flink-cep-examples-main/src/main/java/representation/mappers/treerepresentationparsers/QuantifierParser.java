@@ -20,11 +20,11 @@ public class QuantifierParser {
             }
             case "range" -> {
                 Tree<String> fromNode = quantifierNode.child(1);
-                Tree<String> toNode = quantifierNode.child(2);
+                Tree<String> sizeNode = quantifierNode.child(2);
                 long fromValue = parseGreaterThanZeroNum(fromNode);
-                long toValue = parseGreaterThanZeroNum(toNode);
+                long sizeValue = parseGreaterThanZeroNum(sizeNode);
                 // Re-order the two values for a meaningful range
-                yield new PatternRepresentation.Quantifier.FromToTimes(Math.min(fromValue, toValue), Math.max(fromValue, toValue));
+                yield new PatternRepresentation.Quantifier.FromToTimes(fromValue, fromValue+sizeValue);
             }
             default -> throw new IllegalArgumentException("Unknown quantifier: " + quantNode.content());
         };

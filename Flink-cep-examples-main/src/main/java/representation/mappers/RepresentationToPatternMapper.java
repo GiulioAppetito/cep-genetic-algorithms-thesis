@@ -88,14 +88,9 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
             long actualTimes = Math.min(nTimes.n(), numEvents);
             pattern = pattern.times((int)actualTimes);
         } else if (event.quantifier() instanceof PatternRepresentation.Quantifier.FromToTimes fromToTimes) {
-            long fromTimes = fromToTimes.from();
-            long toTimes = fromToTimes.to();
-            long start = Math.min(fromTimes, toTimes);
-            long finish = Math.max(fromTimes, toTimes);
-
-            // Limit the range of values to dataset's length
-            long from = Math.min((int)start, (int)numEvents);
-            long to =  Math.min((int)finish, (int)numEvents);
+            long from = fromToTimes.from();
+            long size = fromToTimes.to();
+            long to = from + size;
 
             if(to == from){
                 pattern = pattern.times((int)to);

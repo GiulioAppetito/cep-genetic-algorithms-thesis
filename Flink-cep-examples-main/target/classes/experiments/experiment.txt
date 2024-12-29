@@ -1,11 +1,11 @@
-$nEvals = [100]
+$nEvals = [1000]
 
 ea.experiment(
-  runs = (randomGenerator = (seed = [1:1:10]) * [m.defaultRG()]) *
+  runs = (randomGenerator = (seed = [1:1:1]) * [m.defaultRG()]) *
     (solver = (nEval = $nEvals) * [
       ea.s.ga(
         name = "gp";
-        nPop = 10;
+        nPop = 100;
         representation = ea.r.cfgTree(grammar = ea.grammar.fromProblem(problem = tesi.problem.patternInferenceProblem()));
         mapper = ea.m.grammarTreeBP(problem = tesi.problem.patternInferenceProblem())
       )

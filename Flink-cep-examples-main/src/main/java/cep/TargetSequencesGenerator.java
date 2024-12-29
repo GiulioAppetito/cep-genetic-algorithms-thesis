@@ -41,21 +41,21 @@ public class TargetSequencesGenerator {
                     @Override
                     public boolean filter(BaseEvent event) {
                         Map<String, Object> eventMap = event.toMap();
-                        Object successful_login = eventMap.get("successful_login");
+                        Object alarm_status = eventMap.get("alarm_status");
 
-                        // Primo evento con successful_login = false
-                        return Boolean.FALSE.equals(successful_login);
+                        // Primo evento con alarm_status = false
+                        return Boolean.FALSE.equals(alarm_status);
                     }
-                }).oneOrMore()// Può esserci uno o più eventi con successful_login = false
-                .next("second_event") // Successivamente, un evento con successful_login = true
+                }).oneOrMore()
+                .next("second_event")
                 .where(new SimpleCondition<>() {
                     @Override
                     public boolean filter(BaseEvent event) {
                         Map<String, Object> eventMap = event.toMap();
-                        Object successful_login = eventMap.get("successful_login");
+                        Object alarm_status = eventMap.get("alarm_status");
 
                         // Evento successivo con successful_login = true
-                        return Boolean.TRUE.equals(successful_login);
+                        return Boolean.TRUE.equals(alarm_status);
                     }
                 });
 

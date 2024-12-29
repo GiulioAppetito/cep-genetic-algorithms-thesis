@@ -110,8 +110,6 @@ public class GrammarBuilder {
             grammar.append("<opStr> ::= equal | notEqual\n");
         }
 
-
-
         // Quantifiers
         grammar.append("<quantifier> ::= oneOrMore | optional | times <greaterThanZeroNum> | range <greaterThanZeroNum> <greaterThanZeroNum>\n");
 
@@ -122,7 +120,7 @@ public class GrammarBuilder {
         grammar.append("<digit> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9\n");
         grammar.append("<greaterThanZeroDigit> ::= 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9\n");
         grammar.append("<iNum> ::= <digit> | <iNum> <digit>\n");
-        grammar.append("<greaterThanZeroNum> ::= <greaterThanZeroDigit> | <greaterThanZeroNum> <digit> | <greaterThanZeroNum> <greaterThanZeroDigit>\n");
+        grammar.append("<greaterThanZeroNum> ::= <greaterThanZeroDigit> | <greaterThanZeroNum> <digit> | <greaterThanZeroDigit> <greaterThanZeroNum>\n");
 
         if (columnTypes.containsValue(DataTypesEnum.BOOLEAN)) {
             grammar.append("<boolean> ::= true | false\n");
