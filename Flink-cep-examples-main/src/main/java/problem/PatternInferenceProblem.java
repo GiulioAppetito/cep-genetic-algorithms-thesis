@@ -3,6 +3,7 @@ package problem;
 import cep.TargetSequencesGenerator;
 import events.BaseEvent;
 import events.factory.DataStreamFactory;
+import utils.ColoredText;
 import utils.CsvAnalyzer;
 import fitness.FitnessCalculator;
 import fitness.utils.TargetSequenceReader;
@@ -59,7 +60,7 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
         String type = getRequiredProperty(myConfig, "grammarType");
         GrammarTypes grammarType = GrammarTypes.valueOf(type);
 
-        GrammarGenerator.generateGrammar(csvFilePath, grammarFilePath, grammarType);
+        GrammarGenerator.generateGrammar(csvFilePath, grammarFilePath, grammarType, numEvents);
         this.grammar = loadGrammar(grammarFilePath);
         this.fitnessCalculator = new FitnessCalculator(targetSequences);
     }
@@ -73,7 +74,7 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
     public Function<PatternRepresentation, Double> qualityFunction() {
         return patternRepresentation -> {
             try {
-                //System.out.println(ColoredText.YELLOW"Invoked qualityFunction of "+patternRepresentation);
+                //System.out.println(ColoredText.YELLOW + "Invoked qualityFunction of "+patternRepresentation + ColoredText.RESET);
                 // Setup local environment for Flink CEP
                 StreamExecutionEnvironment localEnvironment = StreamExecutionEnvironment.createLocalEnvironment();
                 ExecutionConfig config = localEnvironment.getConfig();

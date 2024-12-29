@@ -14,7 +14,8 @@ public class GrammarBuilder {
                                       Map<String, Set<String>> uniqueStringValues,
                                       List<DataTypesEnum> uniqueColumnTypes,
                                       GrammarTypes grammarType,
-                                      String csvFilePath) throws Exception {
+                                      String csvFilePath,
+                                      long numEvents) throws Exception {
         StringBuilder grammar = new StringBuilder();
         System.out.println("[GrammarBuilder] uniqueColumnTypes : "+ uniqueColumnTypes);
 
@@ -30,6 +31,7 @@ public class GrammarBuilder {
         // Max value
         final long maxBoundedValue = CsvAnalyzer.calculateDurationFromCsv(csvFilePath);
         final int maxDigits = String.valueOf(maxBoundedValue).length();
+        final int maxTimesDigit = String.valueOf(numEvents).length();
 
         // Define the top-level pattern structure
         grammar.append("<pattern> ::= <events> <withinClause> <key_by> | <events> <withinClause> <key_by> | <events> <withinClause> | <events>\n");
@@ -111,7 +113,24 @@ public class GrammarBuilder {
         }
 
         // Quantifiers
-        grammar.append("<quantifier> ::= oneOrMore | optional | times <greaterThanZeroNum> | range <greaterThanZeroNum> <greaterThanZeroNum>\n");
+        if (grammarType.equals(GrammarTypes.BOUNDED_DURATION) || grammarType.equals(GrammarTypes.BOUNDED_DURATION_AND_KEY_BY)) {
+            grammar.append("<quantifier> ::= oneOrMore | optional | times <boundedTimes> | range <boundedTimes> <boundedTimes>\n");
+            grammar.append("<boundedTimes> ::= ");
+
+            for (int i = 1; i <= maxTimesDigit; i++) {
+                grammar.append("<greaterThanZeroDigit>");
+                for (int j = 1; j < i; j++) {
+                    grammar.append(" <digit>");
+                }
+                if (i < maxTimesDigit) {
+                    grammar.append(" | ");
+                }
+            }
+            grammar.append("\n");
+        }else{
+            grammar.append("<quantifier> ::= oneOrMore | optional | times <greaterThanZeroNum> | range <greaterThanZeroNum> <greaterThanZeroNum>\n");
+        }
+
 
         // Number representation
         if (uniqueColumnTypes.contains(DataTypesEnum.LONG) || uniqueColumnTypes.contains(DataTypesEnum.DOUBLE)){

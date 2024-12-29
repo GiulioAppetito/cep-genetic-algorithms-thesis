@@ -34,13 +34,17 @@ public class EventSequenceMatcher {
                 : inputDataStream;
 
         // Create a data stream of matched sequences
+        System.out.println("[ESM] Calling getMatchedDataStream ");
         DataStream<List<Map<String, Object>>> matchedStream = getMatchedDataStream(keyedStream, generatedPattern);
 
         // Collect matched sequences using executeAndCollect()
-        Set<List<Map<String, Object>>> detectedSequences = new HashSet<>();
-
+        //System.out.println("[ESM] Instantiating detectedSequences. ");
+        Set<List<Map<String, Object>>> detectedSequences = Collections.synchronizedSet(new HashSet<>());
+        //System.out.println("[ESM] Starting iterator. ");
         try (CloseableIterator<List<Map<String, Object>>> iterator = matchedStream.executeAndCollect()) {
+            //System.out.println("[ESM] After try. ");
             while (iterator.hasNext()) {
+                //System.out.println("[ESM] In while...");
                 List<Map<String, Object>> sequence = iterator.next();
                 detectedSequences.add(sequence);
             }

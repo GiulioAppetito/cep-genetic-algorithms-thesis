@@ -34,6 +34,7 @@ public class FitnessCalculator {
 
         // Use EventSequenceMatcher to retrieve the detected sequences
         EventSequenceMatcher matcher = new EventSequenceMatcher();
+        System.out.println("[FC]: Calling ESM.");
         Set<List<Map<String, Object>>> detectedSequences = matcher.collectSequenceMatches(env, streamToUse, generatedPattern, "Generated", keyByClause,"output_sequences.csv");
 
         /*

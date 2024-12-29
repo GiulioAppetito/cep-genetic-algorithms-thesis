@@ -11,7 +11,7 @@ import static utils.Utils.loadConfig;
 
 public class GrammarGenerator {
 
-    public static void generateGrammar(String csvFilePath, String grammarFilePath, GrammarTypes grammarType) throws Exception {
+    public static void generateGrammar(String csvFilePath, String grammarFilePath, GrammarTypes grammarType, long numEvents) throws Exception {
         // Carica la configurazione
         Properties myConfig = loadConfig("src/main/resources/config.properties");
         String conditionAttributesConfig = myConfig.getProperty("conditionAttributes", "").trim();
@@ -28,7 +28,7 @@ public class GrammarGenerator {
 
         String grammar = null;
         try {
-            grammar = GrammarBuilder.buildGrammar(columnTypes, uniqueStringValues, uniqueColumnTypes, grammarType, csvFilePath);
+            grammar = GrammarBuilder.buildGrammar(columnTypes, uniqueStringValues, uniqueColumnTypes, grammarType, csvFilePath, numEvents);
         } catch (Exception e) {
             System.out.println("Error while generating grammar: " + e.getMessage());
             throw new RuntimeException(e);
