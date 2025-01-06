@@ -34,7 +34,7 @@ public class GrammarBuilder {
         final int maxTimesDigit = String.valueOf(numEvents).length();
 
         // Define the top-level pattern structure
-        grammar.append("<pattern> ::= <events> <withinClause> <key_by> | <events> <withinClause> <key_by> | <events> <withinClause> | <events>\n");
+        grammar.append("<pattern> ::= <events> <withinClause> <key_by> | <events> <withinClause> | <events> | <events> <key_by>\n");
 
         // Define within clause (time-bound constraint)
         if (grammarType.equals(GrammarTypes.BOUNDED_DURATION) || grammarType.equals(GrammarTypes.BOUNDED_DURATION_AND_KEY_BY)) {
@@ -103,7 +103,7 @@ public class GrammarBuilder {
 
         // Operators for each data type
         if (uniqueColumnTypes.contains(DataTypesEnum.INT) || uniqueColumnTypes.contains(DataTypesEnum.LONG) || uniqueColumnTypes.contains(DataTypesEnum.DOUBLE)) {
-            grammar.append("<opNum> ::= equal | notEqual | lt | gt\n");
+            grammar.append("<opNum> ::= equal | lt | gt\n");
         }
         if (uniqueColumnTypes.contains(DataTypesEnum.BOOLEAN)) {
             grammar.append("<opBool> ::= equal | notEqual\n");

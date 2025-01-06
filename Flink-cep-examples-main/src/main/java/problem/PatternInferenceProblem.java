@@ -19,7 +19,9 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import representation.PatternRepresentation;
 import representation.mappers.TreeToRepresentationMapper;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 import java.util.function.Function;
 
 import static utils.Utils.*;
@@ -74,13 +76,12 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
     public Function<PatternRepresentation, Double> qualityFunction() {
         return patternRepresentation -> {
             try {
-                //System.out.println(ColoredText.YELLOW + "Invoked qualityFunction of "+patternRepresentation + ColoredText.RESET);
                 // Setup local environment for Flink CEP
+                System.out.println(ColoredText.PURPLE + "Invoked quality function of: " + patternRepresentation + ColoredText.RESET);
                 StreamExecutionEnvironment localEnvironment = StreamExecutionEnvironment.createLocalEnvironment();
                 ExecutionConfig config = localEnvironment.getConfig();
                 config.registerKryoType(java.util.HashMap.class);
                 config.registerKryoType(BaseEvent.class);
-
 
                 // Create local DataStream from factory
                 DataStream<BaseEvent> eventStream = DataStreamFactory.createDataStream(localEnvironment, csvFilePath);
@@ -92,7 +93,7 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
                         new representation.mappers.RepresentationToPatternMapper<BaseEvent>().convert(patternRepresentation, duration, numEvents),
                         patternRepresentation.keyByClause(),
                         patternRepresentation);
-
+                localEnvironment.close();
                 return fitness;
             } catch (Exception e) {
                 e.printStackTrace();

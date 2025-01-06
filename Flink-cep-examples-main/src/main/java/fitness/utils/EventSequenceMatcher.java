@@ -9,11 +9,9 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.CloseableIterator;
 import representation.PatternRepresentation;
-import utils.CSVWriter;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class EventSequenceMatcher {
 
@@ -34,37 +32,30 @@ public class EventSequenceMatcher {
                 : inputDataStream;
 
         // Create a data stream of matched sequences
-        System.out.println("[ESM] Calling getMatchedDataStream ");
-        DataStream<List<Map<String, Object>>> matchedStream = getMatchedDataStream(keyedStream, generatedPattern);
+        DataStream<List<Map<String, Object>>> matchedStream = applyPatternToDatastream(keyedStream, generatedPattern);
 
         // Collect matched sequences using executeAndCollect()
-        //System.out.println("[ESM] Instantiating detectedSequences. ");
-        Set<List<Map<String, Object>>> detectedSequences = Collections.synchronizedSet(new HashSet<>());
-        //System.out.println("[ESM] Starting iterator. ");
+        Set<List<Map<String, Object>>> detectedSequences = new HashSet<>();
         try (CloseableIterator<List<Map<String, Object>>> iterator = matchedStream.executeAndCollect()) {
-            //System.out.println("[ESM] After try. ");
             while (iterator.hasNext()) {
-                //System.out.println("[ESM] In while...");
                 List<Map<String, Object>> sequence = iterator.next();
                 detectedSequences.add(sequence);
             }
         }
 
-        // Write detected sequences to a CSV file
-        CSVWriter.writeSequencesToCSV(outputCsvPath, detectedSequences);
-
+        // Return the collected sequences
         return detectedSequences;
     }
-
 
     /**
      * Creates a data stream of matched sequences for a given pattern.
      */
-    private DataStream<List<Map<String, Object>>> getMatchedDataStream(
+    private DataStream<List<Map<String, Object>>> applyPatternToDatastream(
             DataStream<BaseEvent> inputDataStream,
             Pattern<BaseEvent, ?> pattern) {
 
         PatternStream<BaseEvent> patternStream = CEP.pattern(inputDataStream, pattern);
+
         return patternStream.select(new PatternToListSelectFunction());
     }
 
@@ -74,7 +65,7 @@ public class EventSequenceMatcher {
     private static class PatternToListSelectFunction implements PatternSelectFunction<BaseEvent, List<Map<String, Object>>> {
         @Override
         public List<Map<String, Object>> select(Map<String, List<BaseEvent>> match) {
-            // Convert the matched events into a list of maps
+            // Debug: Log the matched pattern
             List<Map<String, Object>> resultSequence = new ArrayList<>();
             for (List<BaseEvent> events : match.values()) {
                 for (BaseEvent event : events) {
