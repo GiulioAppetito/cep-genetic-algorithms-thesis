@@ -159,18 +159,6 @@ ea.experiment(
 
 ---
 
-## Contributors
-
-- **Your Name** (your.email@example.com)
-
----
-
-## License
-
-This project is licensed under the MIT License.
-
----
-
 ## References
 
 - [Apache Flink](https://flink.apache.org/)
