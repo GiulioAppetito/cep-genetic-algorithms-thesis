@@ -1,5 +1,5 @@
 
-# Pattern-Based Event Sequence Matching Framework
+# EA-CEP-Based Event Sequence Matching Framework
 
 ## Overview
 
