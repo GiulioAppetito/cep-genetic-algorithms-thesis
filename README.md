@@ -41,32 +41,43 @@ The project leverages **Apache Flink CEP** for event processing and the **JGEA (
 
 ### `config.properties`
 
-Key configurations for running the project.
+This file controls various parameters of the framework. Below is a detailed explanation of its key fields:
 
 ```properties
-# Paths
-datasetDirPath=src/main/resources/datasets/sources/
-csvFileName=ithaca-sshd-processed-simple.csv
-grammarDirPath=src/main/resources/grammars/generated/
-grammarFileName=generatedGrammar.bnf
-targetDatasetPath=src/main/resources/datasets/target/targetDataset.csv
+# Paths to required files and directories
+datasetDirPath=src/main/resources/datasets/sources/ # Directory containing the source datasets
+csvFileName=ithaca-sshd-processed-simple.csv       # Name of the input CSV file with event data
+grammarDirPath=src/main/resources/grammars/generated/ # Directory where generated grammars will be saved
+grammarFileName=generatedGrammar.bnf              # Name of the grammar file to be generated
+targetDatasetPath=src/main/resources/datasets/target/targetDataset.csv # Path to the target dataset
 
 # Grammar settings
-grammarType=BOUNDED_DURATION
-keyByField=
-targetKeyByField=ip_address
+grammarType=BOUNDED_DURATION  # Type of grammar. Options:
+                              # - UNBOUNDED: No restrictions on patterns.
+                              # - BOUNDED_DURATION: Patterns restricted by time duration.
+                              # - BOUNDED_KEY_BY: Patterns grouped by a key field.
+                              # - BOUNDED_DURATION_AND_KEY_BY: Both restrictions apply.
+
+keyByField=                   # Key field for "group by" operations in detected patterns.
+targetKeyByField=ip_address   # Key field for "group by" operations in target patterns.
 
 # Print options
-printIndividuals=true
+printIndividuals=true         # Print detailed information for individuals. Options: true, false.
 
-# Matching strategies
-targetStrategy=skipToNext
-individualStrategy=skipToNext
+# Matching strategies for patterns
+targetStrategy=skipToNext     # Strategy for handling overlapping matches in target patterns.
+individualStrategy=skipToNext # Strategy for handling overlaps in generated patterns.
 ```
 
 ### Experiment Configuration (`experiments/experiment.txt`)
 
-Defines genetic algorithm parameters:
+Defines genetic algorithm parameters. Key settings include:
+
+- **`$nEvals`**: Total number of evaluations.
+- **Population size**: Number of individuals in the genetic population (`nPop`).
+- **Grammar-based representation**: Configuration for pattern representation and mapping.
+
+Example configuration:
 
 ```text
 $nEvals = [1000]
