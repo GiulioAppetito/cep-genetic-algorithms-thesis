@@ -27,7 +27,7 @@ The project leverages **Apache Flink CEP** for event processing and the **JGEA (
 
 ## Project Structure
 
-- `cep/`: Contains core CEP-related logic and utilities.
+- `cep/`: Contains logic to generate target event sequences.
 - `events/`: Base classes for defining events and their attributes.
 - `fitness/`: Handles fitness evaluation, matching, and scoring.
 - `grammar/`: Modules for grammar generation and management.
