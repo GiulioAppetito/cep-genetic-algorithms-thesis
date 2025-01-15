@@ -33,7 +33,6 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
     private final String targetDatasetPath;
     private final long duration;
     private final long numEvents;
-    private StreamExecutionEnvironment remoteEnvironment;
 
     public PatternInferenceProblem(String configPath) throws Exception {
         Properties myConfig = loadConfig(configPath);
@@ -43,11 +42,6 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
         this.targetDatasetPath = getRequiredProperty(myConfig, "targetDatasetPath");
         this.duration = CsvAnalyzer.calculateDurationFromCsv(csvFilePath);
         this.numEvents = CsvAnalyzer.countRowsInCsv(csvFilePath);
-        this.remoteEnvironment = StreamExecutionEnvironment.createRemoteEnvironment(
-                "localhost", // Hostname del JobManager nel cluster
-                8081,
-                "C:\\Users\\giuli\\IdeaProjects\\cep-genetic-algorithms-thesis-dev3\\Flink-cep-examples-main\\target\\flinkCEP-Patterns-0.1-jar-with-dependencies.jar"
-        );
 
         // Generate target patterns and save matches to a file
         StreamExecutionEnvironment localEnv = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -82,6 +76,11 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
     public Function<PatternRepresentation, Double> qualityFunction() {
         return patternRepresentation -> {
             try {
+                StreamExecutionEnvironment remoteEnvironment = StreamExecutionEnvironment.createRemoteEnvironment(
+                        "localhost", // Hostname del JobManager nel cluster
+                        8081,
+                        "C:\\Users\\giuli\\IdeaProjects\\cep-genetic-algorithms-thesis-dev3\\Flink-cep-examples-main\\target\\flinkCEP-Patterns-0.1-jar-with-dependencies.jar"
+                );
                 ExecutionConfig config = remoteEnvironment.getConfig();
                 config.registerKryoType(java.util.HashMap.class);
                 config.registerKryoType(BaseEvent.class);
