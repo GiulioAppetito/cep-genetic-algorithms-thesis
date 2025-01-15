@@ -11,7 +11,6 @@ import org.apache.flink.util.CloseableIterator;
 import representation.PatternRepresentation;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class EventSequenceMatcher {
 
@@ -34,7 +33,7 @@ public class EventSequenceMatcher {
         // Create a data stream of matched sequences
         DataStream<List<Map<String, Object>>> matchedStream = applyPatternToDatastream(keyedStream, generatedPattern);
 
-        // Collect matched sequences using executeAndCollect()
+        // Execute the job on the cluster and collect results
         Set<List<Map<String, Object>>> detectedSequences = new HashSet<>();
         try (CloseableIterator<List<Map<String, Object>>> iterator = matchedStream.executeAndCollect()) {
             while (iterator.hasNext()) {
@@ -43,7 +42,6 @@ public class EventSequenceMatcher {
             }
         }
 
-        // Return the collected sequences
         return detectedSequences;
     }
 
@@ -54,8 +52,10 @@ public class EventSequenceMatcher {
             DataStream<BaseEvent> inputDataStream,
             Pattern<BaseEvent, ?> pattern) {
 
+        // Associate the pattern with the data stream
         PatternStream<BaseEvent> patternStream = CEP.pattern(inputDataStream, pattern);
 
+        // Return the selected matches as a list of maps
         return patternStream.select(new PatternToListSelectFunction());
     }
 
@@ -65,7 +65,6 @@ public class EventSequenceMatcher {
     private static class PatternToListSelectFunction implements PatternSelectFunction<BaseEvent, List<Map<String, Object>>> {
         @Override
         public List<Map<String, Object>> select(Map<String, List<BaseEvent>> match) {
-            // Debug: Log the matched pattern
             List<Map<String, Object>> resultSequence = new ArrayList<>();
             for (List<BaseEvent> events : match.values()) {
                 for (BaseEvent event : events) {

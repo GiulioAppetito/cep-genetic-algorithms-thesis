@@ -49,7 +49,6 @@ public class FitnessCalculator {
         // Elapsed time
         long endTime = System.nanoTime();
         double elapsedTime = (endTime - startTime) / 1_000_000_000.0;
-        System.out.println(ColoredText.CYAN+"Time taken to evaluate:\nPattern:\n "+ patternRepresentation+":\nTime:"+elapsedTime+"s"+ColoredText.RESET);
         return fitnessScore;
     }
 }

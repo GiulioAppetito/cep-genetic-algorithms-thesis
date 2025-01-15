@@ -19,7 +19,6 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import representation.PatternRepresentation;
 import representation.mappers.TreeToRepresentationMapper;
 
-import java.awt.*;
 import java.util.*;
 import java.util.List;
 import java.util.function.Function;
@@ -34,6 +33,7 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
     private final String targetDatasetPath;
     private final long duration;
     private final long numEvents;
+    private StreamExecutionEnvironment remoteEnvironment;
 
     public PatternInferenceProblem(String configPath) throws Exception {
         Properties myConfig = loadConfig(configPath);
@@ -43,16 +43,22 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
         this.targetDatasetPath = getRequiredProperty(myConfig, "targetDatasetPath");
         this.duration = CsvAnalyzer.calculateDurationFromCsv(csvFilePath);
         this.numEvents = CsvAnalyzer.countRowsInCsv(csvFilePath);
+        this.remoteEnvironment = StreamExecutionEnvironment.createRemoteEnvironment(
+                "localhost", // Hostname del JobManager nel cluster
+                8081,
+                "C:\\Users\\giuli\\IdeaProjects\\cep-genetic-algorithms-thesis-dev3\\Flink-cep-examples-main\\target\\flinkCEP-Patterns-0.1-jar-with-dependencies.jar"
+        );
 
         // Generate target patterns and save matches to a file
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        DataStream<BaseEvent> eventStream = DataStreamFactory.createDataStream(env, csvFilePath);
+        StreamExecutionEnvironment localEnv = StreamExecutionEnvironment.getExecutionEnvironment();
+        DataStream<BaseEvent> eventStream = DataStreamFactory.createDataStream(localEnv, csvFilePath);
         TargetSequencesGenerator.saveMatchesToFile(
                 TargetSequencesGenerator.createTargetPatterns(),
                 eventStream,
                 targetDatasetPath,
                 myConfig.getProperty("targetKeyByField")
         );
+
 
         // Load target sequences (to find) for fitness evaluation
         this.targetSequences = TargetSequenceReader.readTargetSequencesFromFile(targetDatasetPath);
@@ -76,24 +82,21 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
     public Function<PatternRepresentation, Double> qualityFunction() {
         return patternRepresentation -> {
             try {
-                // Setup local environment for Flink CEP
-                System.out.println(ColoredText.PURPLE + "Invoked quality function of: " + patternRepresentation + ColoredText.RESET);
-                StreamExecutionEnvironment localEnvironment = StreamExecutionEnvironment.createLocalEnvironment();
-                ExecutionConfig config = localEnvironment.getConfig();
+                ExecutionConfig config = remoteEnvironment.getConfig();
                 config.registerKryoType(java.util.HashMap.class);
                 config.registerKryoType(BaseEvent.class);
 
                 // Create local DataStream from factory
-                DataStream<BaseEvent> eventStream = DataStreamFactory.createDataStream(localEnvironment, csvFilePath);
+                DataStream<BaseEvent> eventStream = DataStreamFactory.createDataStream(remoteEnvironment, csvFilePath);
 
                 // Calculate fitness of the Pattern
                 double fitness =  fitnessCalculator.calculateFitness(
-                        localEnvironment,
+                        remoteEnvironment,
                         eventStream,
                         new representation.mappers.RepresentationToPatternMapper<BaseEvent>().convert(patternRepresentation, duration, numEvents),
                         patternRepresentation.keyByClause(),
                         patternRepresentation);
-                localEnvironment.close();
+
                 return fitness;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -101,6 +104,7 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
             }
         };
     }
+
 
     @Override
     public StringGrammar<String> getGrammar() {

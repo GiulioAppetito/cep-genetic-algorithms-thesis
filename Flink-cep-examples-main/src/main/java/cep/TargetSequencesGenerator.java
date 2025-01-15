@@ -12,7 +12,6 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamUtils;
 import utils.ColoredText;
 
-import java.awt.*;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
@@ -36,18 +35,29 @@ public class TargetSequencesGenerator {
         };
         System.out.println(ColoredText.GREEN+"Selected TARGET AfterMatchSkipStrategy: " + skipStrategy+ColoredText.RESET);
 
-        Pattern<BaseEvent, ?> loginPattern = Pattern.<BaseEvent>begin("first_event", skipStrategy)
+        Pattern<BaseEvent, ?> loginPattern = Pattern.<BaseEvent>begin("failed_logins", skipStrategy)
                 .where(new SimpleCondition<>() {
                     @Override
                     public boolean filter(BaseEvent event) {
                         Map<String, Object> eventMap = event.toMap();
-                        Object temperature = eventMap.get("temperature");
+                        Object successful_login = eventMap.get("successful_login");
 
-                        // Primo evento con alarm_status = false
-                        return temperature instanceof Number &&
-                                ((Number) temperature).doubleValue() > 20;
+                        // Eventi con successful_login = false
+                        return Boolean.FALSE.equals(successful_login);
                     }
-                }).oneOrMore();
+                }).oneOrMore() // Uno o più eventi di login falliti
+                .next("successful_login") // Seguito da un evento di login corretto
+                .where(new SimpleCondition<>() {
+                    @Override
+                    public boolean filter(BaseEvent event) {
+                        Map<String, Object> eventMap = event.toMap();
+                        Object successful_login = eventMap.get("successful_login");
+
+                        // Evento con successful_login = true
+                        return Boolean.TRUE.equals(successful_login);
+                    }
+                });
+
 
 
         targetPatterns.add(loginPattern);

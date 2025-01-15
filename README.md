@@ -1,20 +1,20 @@
 # Complex Event Processing with Genetic Algorithms
 
-This project utilizes genetic algorithms to generate and optimize event patterns for real-time streaming data using Apache Flink. The system enables the creation of custom event patterns, transformation of patterns into Flink-compatible rules, and the evaluation of how well detected patterns match predefined target sequences.
+This project utilizes genetic algorithms to generate and optimize event patterns for real-time streaming data using Apache Flink. The system enables the creation of custom event patterns, transformation of patterns into Flink-compatible rules, and the evaluation of how well detected patterns match predefined cep sequences.
 
 ## Project Structure
 
 - **app.Main**: Main entry point; loads configuration, generates grammar from CSV, creates patterns, sets up the Flink environment, and calculates fitness using the `FitnessCalculator`.
 
-- **cep.TargetSequencesGenerator**: Generates target event sequences for testing and evaluation by applying predefined patterns to a stream of events and saving matches to a file.
+- **cep.TargetSequencesGenerator**: Generates cep event sequences for testing and evaluation by applying predefined patterns to a stream of events and saving matches to a file.
 
 - **events.factory.DataStreamFactory**: Loads events from a CSV file and represents them as a Flink DataStream, allowing for real-time processing of event data.
 
-- **fitness.FitnessCalculator**: Main fitness evaluation component, which initializes configuration and calculates the fitness of generated patterns against target sequences. It now delegates sequence matching and scoring to `EventSequenceMatcher` and `FitnessScoreCalculator`.
+- **fitness.FitnessCalculator**: Main fitness evaluation component, which initializes configuration and calculates the fitness of generated patterns against cep sequences. It now delegates sequence matching and scoring to `EventSequenceMatcher` and `FitnessScoreCalculator`.
 
 - **fitness.EventSequenceMatcher**: Responsible for applying patterns to the event data stream and collecting matched sequences. This component performs the sequence matching logic for pattern evaluation.
 
-- **fitness.FitnessScoreCalculator**: Calculates the fitness score by comparing detected sequences (generated patterns) against predefined target sequences. Responsible for the scoring logic to determine how well a generated pattern aligns with target patterns.
+- **fitness.FitnessScoreCalculator**: Calculates the fitness score by comparing detected sequences (generated patterns) against predefined cep sequences. Responsible for the scoring logic to determine how well a generated pattern aligns with cep patterns.
 
 - **fitness.grammar.EventParser**: Provides helper methods to parse event sequences, convert data formats, and handle any CSV-based sequence parsing required by `FitnessCalculator`.
 

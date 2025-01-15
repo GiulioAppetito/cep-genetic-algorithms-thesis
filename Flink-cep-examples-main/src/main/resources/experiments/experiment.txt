@@ -1,7 +1,7 @@
 $nEvals = [1000]
 
 ea.experiment(
-  runs = (randomGenerator = (seed = [1:1:10]) * [m.defaultRG()]) *
+  runs = (randomGenerator = (seed = [1:1:5]) * [m.defaultRG()]) *
     (solver = (nEval = $nEvals) * [
       ea.s.ga(
         name = "gp";

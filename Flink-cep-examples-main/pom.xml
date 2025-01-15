@@ -28,10 +28,10 @@
     </repositories>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <jgea.version>2.7.1-SNAPSHOT</jgea.version>
-        <flink.version>1.20.0</flink.version>
+        <flink.version>1.19.0</flink.version>
         <spark.version>3.4.1</spark.version>
     </properties>
 
@@ -67,6 +67,12 @@
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-cep</artifactId>
             <version>1.19.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.flink</groupId>
+                    <artifactId>flink-shaded-guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>custom.merged</groupId>
@@ -124,11 +130,36 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
+                    <source>17</source>
+                    <target>17</target>
                 </configuration>
             </plugin>
 
+            <!-- Maven Assembly Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>io.github.ericmedvet.jgea.experimenter.Starter</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>
