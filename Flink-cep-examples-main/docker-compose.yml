@@ -1,14 +1,19 @@
-version: "3.8"
 services:
   jobmanager:
     image: flink:1.19.0-scala_2.12-java17
     container_name: flink-jobmanager
     hostname: jobmanager
     ports:
-      - "8081:8081" # UI di Flink
+      - "8081:8081" # Flink UI
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
     command: jobmanager
+    deploy:
+      resources:
+        limits:
+          memory: 5g
+        reservations:
+          memory: 5g
     networks:
       - flink-network
 
@@ -18,8 +23,14 @@ services:
     hostname: taskmanager1
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - TASK_MANAGER_NUMBER_OF_TASK_SLOTS=4 # Aumenta il numero di slots
+      - TASK_MANAGER_NUMBER_OF_TASK_SLOTS=20
     command: taskmanager
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+        reservations:
+          memory: 2g
     networks:
       - flink-network
 
@@ -29,21 +40,19 @@ services:
     hostname: taskmanager2
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - TASK_MANAGER_NUMBER_OF_TASK_SLOTS=4 # Aumenta il numero di slots
+      - TASK_MANAGER_NUMBER_OF_TASK_SLOTS=20
     command: taskmanager
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+        reservations:
+          memory: 2g
     networks:
       - flink-network
 
-  taskmanager3:
-    image: flink:1.19.0-scala_2.12-java17
-    container_name: flink-taskmanager-3
-    hostname: taskmanager3
-    environment:
-      - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - TASK_MANAGER_NUMBER_OF_TASK_SLOTS=4 # Aumenta il numero di slots
-    command: taskmanager
-    networks:
-      - flink-network
+
+
 
 networks:
   flink-network:

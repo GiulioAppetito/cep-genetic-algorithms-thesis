@@ -12,10 +12,15 @@ import utils.ColoredText;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class FitnessCalculator {
 
     private final Set<List<Map<String, Object>>> targetSequences;
+
+    // Map to cache fitness values for individuals
+    private static final Map<Integer, Double> fitnessCache = new ConcurrentHashMap<>();
+
 
     public FitnessCalculator(Set<List<Map<String, Object>>> targetSequences) {
         // Initialize targetSequences
@@ -28,8 +33,14 @@ public class FitnessCalculator {
                                    PatternRepresentation.KeyByClause keyByClause,
                                    PatternRepresentation patternRepresentation) throws Exception {
 
-        // Start measuring time
-        long startTime = System.nanoTime();
+        // Generate a unique hash for the individual based on its pattern representation
+        int patternHash = patternRepresentation.hashCode();
+
+        // Check if fitness is already calculated and cached
+        if (fitnessCache.containsKey(patternHash)) {
+            System.out.println(ColoredText.GREEN + ("Fitness value found in cache for hash: " + patternHash + ", fitness: "+fitnessCache.get(patternHash)) + ColoredText.RESET);
+            return fitnessCache.get(patternHash);
+        }
 
         // Apply keyBy if keyByClause is present
         DataStream<BaseEvent> streamToUse = (keyByClause != null && keyByClause.key() != null)
@@ -46,9 +57,9 @@ public class FitnessCalculator {
         double beta = 1; // Beta value for Fβ score; beta is chosen such that recall is considered beta times as important as precision
         double fitnessScore =  ScoreCalculator.calculateFitnessScore(targetSequences, detectedSequences, patternRepresentation, beta);
 
-        // Elapsed time
-        long endTime = System.nanoTime();
-        double elapsedTime = (endTime - startTime) / 1_000_000_000.0;
+        // Cache the calculated fitness score for future use
+        fitnessCache.put(patternHash, fitnessScore);
+
         return fitnessScore;
     }
 }
