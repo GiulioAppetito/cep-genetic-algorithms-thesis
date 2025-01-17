@@ -4,16 +4,19 @@ services:
     container_name: flink-jobmanager
     hostname: jobmanager
     ports:
-      - "8081:8081" # Flink UI
+      - "8081:8081"  # Flink UI
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - FLINK_ENV_JAVA_OPTS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
+    volumes:
+      - ./config.yaml:/opt/flink/conf/config.yaml  # Monta il file di configurazione
     command: jobmanager
     deploy:
       resources:
         limits:
-          memory: 5g
+          memory: 6g
         reservations:
-          memory: 5g
+          memory: 6g
     networks:
       - flink-network
 
@@ -23,7 +26,9 @@ services:
     hostname: taskmanager1
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - TASK_MANAGER_NUMBER_OF_TASK_SLOTS=20
+      - FLINK_ENV_JAVA_OPTS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
+    volumes:
+      - ./config.yaml:/opt/flink/conf/config.yaml  # Monta il file di configurazione
     command: taskmanager
     deploy:
       resources:
@@ -40,7 +45,9 @@ services:
     hostname: taskmanager2
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - TASK_MANAGER_NUMBER_OF_TASK_SLOTS=20
+      - FLINK_ENV_JAVA_OPTS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
+    volumes:
+      - ./config.yaml:/opt/flink/conf/config.yaml  # Monta il file di configurazione
     command: taskmanager
     deploy:
       resources:
@@ -50,9 +57,6 @@ services:
           memory: 2g
     networks:
       - flink-network
-
-
-
 
 networks:
   flink-network:
