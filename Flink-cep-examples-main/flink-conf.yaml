@@ -1,0 +1,27 @@
+blob.server.port: 6124
+blob.expiration.time: 240
+taskmanager.memory.process.size: 2048m
+blob.storage.directory: /opt/flink/blobStorage
+jobmanager.rpc.address: jobmanager
+web.tmpdir: /opt/flink/tmp
+jobmanager.memory.process.size: 4096m
+query.server.port: 6125
+execution.checkpointing.timeout: 60000
+rest.port: 8081
+parallelism.default: 4
+taskmanager.numberOfTaskSlots: 16
+jobmanager.archive.max-jobs: 10
+blob.cleanup.interval: 480
+
+
+
+
+
+
+
+
+
+
+
+
+

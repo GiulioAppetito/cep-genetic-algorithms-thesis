@@ -77,10 +77,11 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
         return patternRepresentation -> {
             try {
                 StreamExecutionEnvironment remoteEnvironment = StreamExecutionEnvironment.createRemoteEnvironment(
-                        "localhost", // Hostname del JobManager nel cluster
+                        "jobmanager",
                         8081,
-                        "C:\\Users\\giuli\\IdeaProjects\\cep-genetic-algorithms-thesis-dev3\\Flink-cep-examples-main\\target\\flinkCEP-Patterns-0.1-jar-with-dependencies.jar"
+                        "/app/app.jar"
                 );
+
                 ExecutionConfig config = remoteEnvironment.getConfig();
                 config.registerKryoType(java.util.HashMap.class);
                 config.registerKryoType(BaseEvent.class);

@@ -20,7 +20,8 @@ public class GrammarBuilder {
         System.out.println("[GrammarBuilder] uniqueColumnTypes : "+ uniqueColumnTypes);
 
         // Load attributes for conditions
-        Properties myConfig = loadConfig("src/main/resources/config.properties");
+        String configPath = System.getenv("CONFIG_PATH");
+        Properties myConfig = loadConfig(configPath);
         String conditionAttributesConfig = myConfig.getProperty("conditionAttributes", "").trim();
         Set<String> allowedAttributes = new HashSet<>();
         if (!conditionAttributesConfig.isEmpty()) {

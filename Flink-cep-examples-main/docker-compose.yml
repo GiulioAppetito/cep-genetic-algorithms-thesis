@@ -1,60 +1,63 @@
 services:
   jobmanager:
-    image: flink:1.19.0-scala_2.12-java17
+    image: flink:1.20.0-java17
     container_name: flink-jobmanager
     hostname: jobmanager
     ports:
-      - "8081:8081"  # Flink UI
+      - "8081:8081"
+      - "6123:6123"
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - FLINK_ENV_JAVA_OPTS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
     volumes:
-      - ./config.yaml:/opt/flink/conf/config.yaml  # Monta il file di configurazione
+      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml  # Monta il file di configurazione
     command: jobmanager
-    deploy:
-      resources:
-        limits:
-          memory: 6g
-        reservations:
-          memory: 6g
     networks:
       - flink-network
 
   taskmanager1:
-    image: flink:1.19.0-scala_2.12-java17
+    image: flink:1.20.0-java17
     container_name: flink-taskmanager-1
     hostname: taskmanager1
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - FLINK_ENV_JAVA_OPTS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
     volumes:
-      - ./config.yaml:/opt/flink/conf/config.yaml  # Monta il file di configurazione
+      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml  # Monta il file di configurazione
     command: taskmanager
-    deploy:
-      resources:
-        limits:
-          memory: 2g
-        reservations:
-          memory: 2g
     networks:
       - flink-network
 
   taskmanager2:
-    image: flink:1.19.0-scala_2.12-java17
+    image: flink:1.20.0-java17
     container_name: flink-taskmanager-2
     hostname: taskmanager2
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - FLINK_ENV_JAVA_OPTS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
     volumes:
-      - ./config.yaml:/opt/flink/conf/config.yaml  # Monta il file di configurazione
+      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml  # Monta il file di configurazione
     command: taskmanager
-    deploy:
-      resources:
-        limits:
-          memory: 2g
-        reservations:
-          memory: 2g
+    networks:
+      - flink-network
+
+  app:
+    image: eclipse-temurin:21-jre
+    container_name: flink-app
+    hostname: flink-app
+    depends_on:
+      - jobmanager
+    environment:
+      CONFIG_PATH: /app/config.properties
+    volumes:
+      - ./app.jar:/app/app.jar
+      - ./experiment.txt:/app/experiment.txt
+      - ./src/main/resources/config.properties:/app/config.properties
+      - ./src/main/resources:/app/src/main/resources
+    command: >
+      java --add-opens java.base/java.util=ALL-UNNAMED
+      -jar /app/app.jar
+      -v -nr 1 -nt 14 -f /app/experiment.txt
     networks:
       - flink-network
 

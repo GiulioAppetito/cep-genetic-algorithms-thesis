@@ -13,7 +13,8 @@ public class GrammarGenerator {
 
     public static void generateGrammar(String csvFilePath, String grammarFilePath, GrammarTypes grammarType, long numEvents) throws Exception {
         // Carica la configurazione
-        Properties myConfig = loadConfig("src/main/resources/config.properties");
+        String configPath = System.getenv("CONFIG_PATH");
+        Properties myConfig = loadConfig(configPath);
         String conditionAttributesConfig = myConfig.getProperty("conditionAttributes", "").trim();
         Set<String> allowedAttributes = new HashSet<>();
         if (!conditionAttributesConfig.isEmpty()) {

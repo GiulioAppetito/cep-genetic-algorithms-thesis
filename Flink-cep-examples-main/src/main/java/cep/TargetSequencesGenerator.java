@@ -25,7 +25,8 @@ public class TargetSequencesGenerator {
     public static List<Pattern<BaseEvent, ?>> createTargetPatterns() throws Exception {
         List<Pattern<BaseEvent, ?>> targetPatterns = new ArrayList<>();
         // Define the pattern for 3 or more failed login attempts for a specific IP address within a time interval
-        Properties myConfig = loadConfig("src/main/resources/config.properties");
+        String configPath = System.getenv("CONFIG_PATH");
+        Properties myConfig = loadConfig(configPath);
         String targetStrategy = myConfig.getProperty("targetStrategy", "");
         AfterMatchSkipStrategy skipStrategy = switch (targetStrategy) {
             case "noSkip" -> AfterMatchSkipStrategy.noSkip();

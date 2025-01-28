@@ -14,8 +14,9 @@ public class Problems {
     @SuppressWarnings("unused")
     @Cacheable
     public static PatternInferenceProblem patternInferenceProblem() throws Exception {
-        String configPath = "src/main/resources/config.properties";
+        String configPath = System.getenv("CONFIG_PATH");
+        //String configPath = "src/main/resources/config.properties";
 
-        return new PatternInferenceProblem("src/main/resources/config.properties");
+        return new PatternInferenceProblem(configPath);
     }
 }

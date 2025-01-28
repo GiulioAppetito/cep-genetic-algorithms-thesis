@@ -69,7 +69,8 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
 
     // Creates a Pattern for a single event, applying any conditions and quantifiers
     private Pattern<E, E> createPatternForEvent(PatternRepresentation.Event event, String uniqueIdentifier, long numEvents) throws Exception {
-        Properties myConfig = loadConfig("src/main/resources/config.properties");
+        String configPath = System.getenv("CONFIG_PATH");
+        Properties myConfig = loadConfig(configPath);
         String individualStrategy = myConfig.getProperty("individualStrategy", "");
         AfterMatchSkipStrategy skipStrategy = switch (individualStrategy) {
             case "noSkip" -> AfterMatchSkipStrategy.noSkip();

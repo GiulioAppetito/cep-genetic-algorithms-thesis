@@ -54,7 +54,8 @@ public class ScoreCalculator {
                 : (1 + betaSquared) * (precision * recall) / ((betaSquared * precision) + recall);
 
         // Print individual and its fitness
-        Properties myConfig = loadConfig("src/main/resources/config.properties");
+        String configPath = System.getenv("CONFIG_PATH");
+        Properties myConfig = loadConfig(configPath);
         String printIndividuals = utils.Utils.getRequiredProperty(myConfig, "printIndividuals");
         if (printIndividuals.equals("true")){
             System.out.println(ColoredText.LIGHT_GRAY + patternRepresentation + ColoredText.RESET + ColoredText.ORANGE + "[ScoreCalculator] Precision: " + precision + ", Recall: " + recall + ", F" + beta + "-Score: " + fBetaScore + "\n" + ColoredText.RESET);
