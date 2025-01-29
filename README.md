@@ -1,84 +1,123 @@
+```markdown
+# EA-CEP-Based Event Sequence Matching Framework (Dockerized)
 
-# EA-CEP-Based Event Sequence Matching Framework
+## 🚀 Overview
 
-## Overview
+This repository provides a framework for **pattern-based event sequence matching** and **pattern inference**.  
+It leverages **Apache Flink CEP** for event processing and **JGEA (Java Genetic Evolutionary Algorithm)** for evolutionary computation.  
 
-This repository contains a framework for **pattern-based event sequence matching** and **pattern inference**. It is designed for exploring complex event processing (CEP) patterns over streaming data using genetic algorithms to infer optimal patterns based on a target dataset.
-
-The project leverages **Apache Flink CEP** for event processing and the **JGEA (Java Genetic Evolutionary Algorithm)** library for evolutionary computations. The main goal is to define grammars, infer patterns, and evaluate their fitness against a target dataset.
-
----
-
-## Features
-
-1. **Grammar-Based Pattern Representation**:
-   - Custom grammars for pattern representation.
-   - Generation of bounded and unbounded grammars.
-2. **Target Sequence Generator**:
-   - Extracts target patterns from event streams based on predefined conditions.
-3. **Fitness Evaluation**:
-   - Matches inferred patterns with target patterns and computes fitness using precision, recall, and Fβ scores.
-4. **Genetic Algorithm Integration**:
-   - Evolves pattern representations to maximize fitness.
-5. **Apache Flink Integration**:
-   - Supports high-performance, distributed event processing.
+🔹 **New Feature:** The project is now fully **containerized with Docker and Apache Flink**! 🎉  
 
 ---
 
-## Project Structure
+## 📌 Features
 
-- `cep/`: Contains logic to generate target event sequences.
-- `events/`: Base classes for defining events and their attributes.
-- `fitness/`: Handles fitness evaluation, matching, and scoring.
-- `grammar/`: Modules for grammar generation and management.
-- `representation/`: Manages pattern representations and conversions.
-- `problem/`: Defines the pattern inference problem and quality evaluation.
-- `resources/`: Configuration and dataset files.
+✅ **Grammar-Based Pattern Representation**: Define custom grammars for pattern matching.  
+✅ **Target Sequence Generator**: Generate target sequences from event streams based on conditions.  
+✅ **Fitness Evaluation**: Evaluate pattern matching accuracy using precision, recall, and Fβ scores.  
+✅ **Genetic Algorithm Integration**: Optimize patterns using an evolutionary approach.  
+✅ **Apache Flink Integration**: Scalable and distributed event processing.  
+✅ **Full Docker Support**: Easily deploy and manage the architecture using Docker.  
 
 ---
 
-## Configuration
+## 📂 Project Structure
 
-### `config.properties`
-
-This file controls various parameters of the framework. Below is a detailed explanation of its key fields:
-
-```properties
-# Paths to required files and directories
-datasetDirPath=src/main/resources/datasets/sources/ # Directory containing the source datasets
-csvFileName=ithaca-sshd-processed-simple.csv       # Name of the input CSV file with event data
-grammarDirPath=src/main/resources/grammars/generated/ # Directory where generated grammars will be saved
-grammarFileName=generatedGrammar.bnf              # Name of the grammar file to be generated
-targetDatasetPath=src/main/resources/datasets/target/targetDataset.csv # Path to the target dataset
-
-# Grammar settings
-grammarType=BOUNDED_DURATION  # Type of grammar. Options:
-                              # - UNBOUNDED: No restrictions on patterns.
-                              # - BOUNDED_DURATION: Patterns restricted by time duration.
-                              # - BOUNDED_KEY_BY: Patterns grouped by a key field.
-                              # - BOUNDED_DURATION_AND_KEY_BY: Both restrictions apply.
-
-keyByField=                   # Key field for "group by" operations in detected patterns.
-targetKeyByField=ip_address   # Key field for "group by" operations in target patterns.
-
-# Print options
-printIndividuals=true         # Print detailed information for individuals. Options: true, false.
-
-# Matching strategies for patterns
-targetStrategy=skipToNext     # Strategy for handling overlapping matches in target patterns.
-individualStrategy=skipToNext # Strategy for handling overlaps in generated patterns.
+```
+Flink-cep-examples-main/
+│── docker-compose.yml        # Docker Compose configuration
+│── flink-conf.yaml           # Flink configuration
+│── scripts/                  # Management scripts
+│   │── manage-architecture.sh  # Start/stop the cluster
+│   │── run-flink-app.sh        # Run the Flink application
+│── src/                       # Source code
+│   └── main/
+│       ├── java/              # Core Java implementation
+│       ├── resources/         # Configuration and datasets
+│── target/                    # Compiled files
+│── RESULTS/                    # Experiment results
+│   └── experiment.txt         # Experiment configuration
 ```
 
-### Experiment Configuration (`experiments/experiment.txt`)
+---
 
-Defines genetic algorithm parameters. Key settings include:
+## ⚙️ Configuration
 
-- **`$nEvals`**: Total number of evaluations.
-- **Population size**: Number of individuals in the genetic population (`nPop`).
-- **Grammar-based representation**: Configuration for pattern representation and mapping.
+### **🔹 Flink Configuration (`flink-conf.yaml`)**
+This file contains Flink memory settings and execution parameters.
 
-Example configuration:
+```properties
+jobmanager.memory.process.size: 2048m
+taskmanager.memory.process.size: 3072m
+taskmanager.numberOfTaskSlots: 16
+parallelism.default: 4
+execution.checkpointing.timeout: 60000
+```
 
+---
+
+## 🐳 Running with Docker
+
+### **1️⃣ Prerequisites**
+- Install [Docker](https://www.docker.com/)
+- Install [Docker Compose](https://docs.docker.com/compose/)
+
+### **2️⃣ Start the Cluster**
+Run the following command from the project root:
+```sh
+./scripts/manage-architecture.sh --start
+```
+This starts:
+- **JobManager** (Flink job manager)
+- **TaskManagers** (Flink workers)
+- **Application container**
+
+You can check running containers with:
+```sh
+docker ps
+```
+
+### **3️⃣ Run the Flink Application**
+Execute the Flink job with configurable parameters:
+```sh
+./scripts/run-flink-app.sh <nr> <nt>
+```
+Example:
+```sh
+./scripts/run-flink-app.sh 2 16
+```
+This will run:
+```sh
+java --add-opens java.base/java.util=ALL-UNNAMED \
+  -jar /app/app.jar -v -nr 2 -nt 16 -f /app/experiment.txt
+```
+
+### **4️⃣ Stop the Cluster**
+To stop all running containers:
+```sh
+./scripts/manage-architecture.sh --stop
+```
+
+---
+
+## 🔬 Workflow
+
+1. **Define Target Patterns**:  
+   Use `TargetSequencesGenerator` to specify event sequence patterns.
+2. **Generate Grammar**:  
+   Use `GrammarGenerator` to define grammar constraints.
+3. **Run Experiments**:  
+   Execute the genetic algorithm using `experiment.txt` settings.
+4. **Evaluate Fitness**:  
+   Assess results using precision, recall, and fitness scores.
+
+---
+
+## 🔬 Experiment Configuration (`experiment.txt`)
+
+This file controls the evolutionary process and genetic algorithm parameters.
+
+Example:
 ```text
 $nEvals = [1000]
 
@@ -113,64 +152,29 @@ ea.experiment(
 
 ---
 
-## Workflow
+## 🛠️ Building & Running Manually
 
-1. **Define Target Patterns**:  
-   Use `TargetSequencesGenerator` to specify the target sequences based on event conditions.
+If you prefer to run the application manually instead of using Docker:
 
-2. **Generate Grammar**:  
-   Use `GrammarGenerator` to create grammars based on dataset attributes and configuration.
+### **1️⃣ Build the Project**
+```sh
+mvn clean install
+```
 
-3. **Run Experiments**:  
-   Execute experiments with the genetic algorithm defined in `experiment.txt`.
-
-4. **Evaluate Fitness**:  
-   Use `FitnessCalculator` to compute the fitness score of inferred patterns.
-
----
-
-## Setup and Execution
-
-### Prerequisites
-
-- Java 11+
-- Maven
-- Apache Flink
-- Required datasets in the specified paths.
-
-### Steps
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-repo/cep-pattern-matching
-   cd cep-pattern-matching
-   ```
-
-2. Configure properties in `config.properties`.
-
-3. Build the project:
-   ```bash
-   mvn clean install
-   ```
-
-4. Run the project using the following command:
-   ```bash
-   java --add-opens java.base/java.util=ALL-UNNAMED -Xms10g -Xmx12g -cp "<classpath>" io.github.ericmedvet.jgea.experimenter.Starter -v -nr 1 -nt 10 -f <path_to_experiment_file>
-   ```
-
-   - Replace `<classpath>` with your project's full classpath, including all dependencies.
-   - Replace `<path_to_experiment_file>` with the path to your experiment configuration file.
-
-   Example:
-   ```bash
-   java --add-opens java.base/java.util=ALL-UNNAMED -Xms10g -Xmx12g -cp "C:\path\to\dependencies\*.jar;target\flinkCEP-Patterns-0.1.jar" io.github.ericmedvet.jgea.experimenter.Starter -v -nr 1 -nt 10 -f src/main/resources/experiments/experiment.txt
-   ```
-
-5. Analyze results in the `RESULTS` directory.
+### **2️⃣ Run the Application**
+```sh
+java --add-opens java.base/java.util=ALL-UNNAMED \
+  -jar target/flinkCEP
+```
 
 ---
 
-## References
-
+## 📚 References
 - [Apache Flink](https://flink.apache.org/)
 - [JGEA Library](https://github.com/ericmedvet/jgea)
+
+---
+
+🚀 **Enjoy your event processing journey with Flink and genetic algorithms!**
+```
+
