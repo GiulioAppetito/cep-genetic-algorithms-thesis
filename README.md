@@ -1,4 +1,3 @@
-```markdown
 # EA-CEP-Based Event Sequence Matching Framework (Dockerized)
 
 ## 🚀 Overview
@@ -33,8 +32,6 @@ taskmanager.numberOfTaskSlots: 16
 parallelism.default: 4
 execution.checkpointing.timeout: 60000
 ```
-
----
 
 ## 🐳 Running with Docker
 
