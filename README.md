@@ -130,9 +130,3 @@ ea.experiment(
 ## 📚 References
 - [Apache Flink](https://flink.apache.org/)
 - [JGEA Library](https://github.com/ericmedvet/jgea)
-
----
-
-🚀 **Enjoy your event processing journey with Flink and genetic algorithms!**
-```
-
