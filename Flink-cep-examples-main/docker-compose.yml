@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   jobmanager:
     image: flink:1.20.0-java17
@@ -10,7 +12,7 @@ services:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - FLINK_ENV_JAVA_OPTS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
     volumes:
-      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml  # Monta il file di configurazione
+      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
     command: jobmanager
     networks:
       - flink-network
@@ -23,7 +25,9 @@ services:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - FLINK_ENV_JAVA_OPTS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
     volumes:
-      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml  # Monta il file di configurazione
+      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - flink-checkpoints:/opt/flink/checkpoints
+      - flink-logs:/opt/flink/log
     command: taskmanager
     networks:
       - flink-network
@@ -36,7 +40,9 @@ services:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - FLINK_ENV_JAVA_OPTS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
     volumes:
-      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml  # Monta il file di configurazione
+      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - flink-checkpoints:/opt/flink/checkpoints
+      - flink-logs:/opt/flink/log
     command: taskmanager
     networks:
       - flink-network
@@ -49,18 +55,20 @@ services:
       - jobmanager
     environment:
       CONFIG_PATH: /app/config.properties
+    entrypoint: ["tail","-f","/dev/null"]
     volumes:
       - ./app.jar:/app/app.jar
       - ./experiment.txt:/app/experiment.txt
       - ./src/main/resources/config.properties:/app/config.properties
       - ./src/main/resources:/app/src/main/resources
-    command: >
-      java --add-opens java.base/java.util=ALL-UNNAMED
-      -jar /app/app.jar
-      -v -nr 1 -nt 14 -f /app/experiment.txt
     networks:
       - flink-network
 
 networks:
   flink-network:
     driver: bridge
+
+volumes:
+  flink-blob-storage:
+  flink-checkpoints:
+  flink-logs:
