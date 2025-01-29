@@ -127,25 +127,6 @@ ea.experiment(
 )
 ```
 
----
-
-## 🛠️ Building & Running Manually
-
-If you prefer to run the application manually instead of using Docker:
-
-### **1️⃣ Build the Project**
-```sh
-mvn clean install
-```
-
-### **2️⃣ Run the Application**
-```sh
-java --add-opens java.base/java.util=ALL-UNNAMED \
-  -jar target/flinkCEP
-```
-
----
-
 ## 📚 References
 - [Apache Flink](https://flink.apache.org/)
 - [JGEA Library](https://github.com/ericmedvet/jgea)
