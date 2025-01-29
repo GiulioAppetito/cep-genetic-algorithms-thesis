@@ -4,9 +4,6 @@
 
 This repository provides a framework for **pattern-based event sequence matching** and **pattern inference**.  
 It leverages **Apache Flink CEP** for event processing and **JGEA (Java Genetic Evolutionary Algorithm)** for evolutionary computation.  
-
-🔹 **New Feature:** The project is now fully **containerized with Docker and Apache Flink**! 🎉  
-
 ---
 
 ## 📌 Features
