@@ -21,26 +21,6 @@ It leverages **Apache Flink CEP** for event processing and **JGEA (Java Genetic 
 
 ---
 
-## 📂 Project Structure
-
-```
-Flink-cep-examples-main/
-│── docker-compose.yml        # Docker Compose configuration
-│── flink-conf.yaml           # Flink configuration
-│── scripts/                  # Management scripts
-│   │── manage-architecture.sh  # Start/stop the cluster
-│   │── run-flink-app.sh        # Run the Flink application
-│── src/                       # Source code
-│   └── main/
-│       ├── java/              # Core Java implementation
-│       ├── resources/         # Configuration and datasets
-│── target/                    # Compiled files
-│── RESULTS/                    # Experiment results
-│   └── experiment.txt         # Experiment configuration
-```
-
----
-
 ## ⚙️ Configuration
 
 ### **🔹 Flink Configuration (`flink-conf.yaml`)**
