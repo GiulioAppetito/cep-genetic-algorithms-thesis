@@ -26,8 +26,6 @@ services:
       - FLINK_ENV_JAVA_OPTS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
     volumes:
       - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
-      - flink-checkpoints:/opt/flink/checkpoints
-      - flink-logs:/opt/flink/log
     command: taskmanager
     networks:
       - flink-network
@@ -41,8 +39,6 @@ services:
       - FLINK_ENV_JAVA_OPTS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
     volumes:
       - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
-      - flink-checkpoints:/opt/flink/checkpoints
-      - flink-logs:/opt/flink/log
     command: taskmanager
     networks:
       - flink-network
@@ -67,8 +63,3 @@ services:
 networks:
   flink-network:
     driver: bridge
-
-volumes:
-  flink-blob-storage:
-  flink-checkpoints:
-  flink-logs:

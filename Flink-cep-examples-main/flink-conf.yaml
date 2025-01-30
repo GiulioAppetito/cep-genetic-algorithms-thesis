@@ -1,28 +1,8 @@
-blob.server.port: 6124
-blob.expiration.time: 240
-taskmanager.memory.process.size: 3072m
+taskmanager.memory.process.size: 2048m
 jobmanager.rpc.address: jobmanager
-web.tmpdir: /opt/flink/tmp
 jobmanager.memory.process.size: 2048m
 query.server.port: 6125
-execution.checkpointing.timeout: 60000
-execution.checkpointing.cleanup-mode: DELETE_ON_CANCELLATION
-execution.checkpointing.max-retained-checkpoints: 2
-blob.cleanup.interval: 300
+execution.checkpointing.interval: 0
 rest.port: 8081
-parallelism.default: 4
+parallelism.default: 2
 taskmanager.numberOfTaskSlots: 16
-jobmanager.archive.max-jobs: 10
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -83,6 +83,7 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
                 );
 
                 ExecutionConfig config = remoteEnvironment.getConfig();
+                remoteEnvironment.getCheckpointConfig().disableCheckpointing();
                 config.registerKryoType(java.util.HashMap.class);
                 config.registerKryoType(BaseEvent.class);
 
