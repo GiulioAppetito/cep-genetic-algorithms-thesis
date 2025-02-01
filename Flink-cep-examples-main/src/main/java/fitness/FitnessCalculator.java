@@ -49,7 +49,7 @@ public class FitnessCalculator {
 
         // Use EventSequenceMatcher to retrieve the detected sequences
         EventSequenceMatcher matcher = new EventSequenceMatcher();
-        Set<List<Map<String, Object>>> detectedSequences = matcher.collectSequenceMatches(env, streamToUse, generatedPattern, "Generated", keyByClause,"output.csv");
+        Set<List<Map<String, Object>>> detectedSequences = matcher.collectSequenceMatches(env, streamToUse, generatedPattern, "Generated", keyByClause,"output.csv", patternRepresentation);
 
         /*
          Use ScoreCalculator to calculate and return the fitness score

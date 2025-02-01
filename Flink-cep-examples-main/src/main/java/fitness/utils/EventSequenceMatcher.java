@@ -23,7 +23,8 @@ public class EventSequenceMatcher {
             Pattern<BaseEvent, ?> generatedPattern,
             String type,
             PatternRepresentation.KeyByClause keyByClause,
-            String outputCsvPath) throws Exception {
+            String outputCsvPath,
+            PatternRepresentation patternRepresentation) throws Exception {
 
         // Apply keyBy if a key is specified in the keyByClause
         DataStream<BaseEvent> keyedStream = (keyByClause != null && keyByClause.key() != null)
@@ -35,7 +36,8 @@ public class EventSequenceMatcher {
 
         // Execute the job on the cluster and collect results
         Set<List<Map<String, Object>>> detectedSequences = new HashSet<>();
-        try (CloseableIterator<List<Map<String, Object>>> iterator = matchedStream.executeAndCollect("Individual Fitness Evaluation")) {
+        String jobName = patternRepresentation.toString();
+        try (CloseableIterator<List<Map<String, Object>>> iterator = matchedStream.executeAndCollect(jobName)) {
             while (iterator.hasNext()) {
                 List<Map<String, Object>> sequence = iterator.next();
                 detectedSequences.add(sequence);
