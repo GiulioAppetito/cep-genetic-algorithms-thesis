@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class FitnessCalculator {
 
@@ -49,11 +50,21 @@ public class FitnessCalculator {
 
         // Use EventSequenceMatcher to retrieve the detected sequences
         EventSequenceMatcher matcher = new EventSequenceMatcher();
-        Set<List<Map<String, Object>>> detectedSequences = matcher.collectSequenceMatches(env, streamToUse, generatedPattern, "Generated", keyByClause,"output.csv", patternRepresentation);
+        Set<List<Map<String, Object>>> detectedSequences = matcher.collectSequenceMatches(
+            env, 
+            streamToUse, 
+            generatedPattern, 
+            "Generated", 
+            keyByClause,
+            "output.csv", 
+            patternRepresentation,
+            30,
+            TimeUnit.SECONDS);
 
         /*
          Use ScoreCalculator to calculate and return the fitness score
          */
+        System.out.println(ColoredText.YELLOW+ "[FitnessCalculator] detectedSequences:" + detectedSequences);
         double beta = 1; // Beta value for Fβ score; beta is chosen such that recall is considered beta times as important as precision
         double fitnessScore =  ScoreCalculator.calculateFitnessScore(targetSequences, detectedSequences, patternRepresentation, beta);
 
