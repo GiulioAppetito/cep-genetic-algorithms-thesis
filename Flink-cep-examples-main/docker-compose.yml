@@ -13,6 +13,7 @@ services:
       - FLINK_ENV_JAVA_OPTS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
     volumes:
       - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./log4j.properties:/opt/flink/conf/log4j.properties
     command: jobmanager
     networks:
       - flink-network
@@ -26,19 +27,7 @@ services:
       - FLINK_ENV_JAVA_OPTS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
     volumes:
       - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
-    command: taskmanager
-    networks:
-      - flink-network
-
-  taskmanager2:
-    image: flink:1.20.0-java17
-    container_name: flink-taskmanager-2
-    hostname: taskmanager2
-    environment:
-      - JOB_MANAGER_RPC_ADDRESS=jobmanager
-      - FLINK_ENV_JAVA_OPTS=--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
-    volumes:
-      - ./flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./log4j.properties:/opt/flink/conf/log4j.properties
     command: taskmanager
     networks:
       - flink-network
@@ -51,12 +40,13 @@ services:
       - jobmanager
     environment:
       CONFIG_PATH: /app/config.properties
-    entrypoint: ["tail","-f","/dev/null"]
+    entrypoint: ["tail", "-f", "/dev/null"]
     volumes:
       - ./app.jar:/app/app.jar
       - ./experiment.txt:/app/experiment.txt
       - ./src/main/resources/config.properties:/app/config.properties
       - ./src/main/resources:/app/src/main/resources
+      - ./RESULTS:/RESULTS
     networks:
       - flink-network
 
