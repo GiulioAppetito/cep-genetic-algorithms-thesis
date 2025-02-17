@@ -30,6 +30,56 @@ parallelism.default: 4
 execution.checkpointing.timeout: 60000
 ```
 
+## 📑 Experiment Configuration (`config.properties`)
+
+Before running experiments, you must configure the `config.properties` file to set up **event datasets, grammars, and target patterns**.
+
+### 🔧 Key Configuration Options
+
+```properties
+# Path to the source datasets directory
+datasetDirPath=/workspace/src/main/resources/datasets/sources/
+
+# Name of the CSV file containing sensor data
+csvFileName=odysseus-sshd-processed-simple.csv
+
+# Path where the generated grammar files will be stored
+grammarDirPath=/workspace/src/main/resources/grammars/generated/
+
+# Name of the file for storing the generated grammar
+grammarFileName=generatedGrammar.bnf
+
+# Path to the target dataset (CEP pattern matching results)
+targetDatasetPath=/workspace/src/main/resources/datasets/target/targetDataset.csv
+
+# Grammar Type Options:
+# UNBOUNDED                   - No limit on any parameter
+# BOUNDED_DURATION            - Limits duration to dataset duration (from first to last record)
+# BOUNDED_KEY_BY              - Limits "key_by" operation to specific attributes
+# BOUNDED_DURATION_AND_KEY_BY - Both duration and key_by are limited
+grammarType = BOUNDED_DURATION_AND_KEY_BY
+
+# Attribute to use for "key_by" in grammar (Only used for BOUNDED_KEY_BY or BOUNDED_DURATION_AND_KEY_BY)
+keyByField=ip_address
+
+# Target pattern matching configurations
+targetKeyByField=
+targetWithinWindowSeconds = 10
+targetFromTimes = 5
+targetToTimes = 10
+
+# Enable or disable printing of generated individuals (true/false)
+printIndividuals = true
+
+# Attributes used for conditions in event matching (leave empty for all)
+conditionAttributes=successful_login
+
+# AfterMatchSkipStrategies for Target and Detected patterns, options:
+# noSkip | skipToNext | skipPastLastEvent
+targetStrategy = skipToNext
+individualStrategy = skipToNext
+
+
 ## 🐳 Running with Docker
 
 ### **1️⃣ Prerequisites**
