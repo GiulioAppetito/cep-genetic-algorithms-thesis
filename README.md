@@ -54,16 +54,11 @@ docker ps
 ### **3️⃣ Run the Flink Application**
 Execute the Flink job with configurable parameters:
 ```sh
-./scripts/run-flink-app.sh <nr> <nt>
+./scripts/run-experiment.sh <nr> <nt>
 ```
 Example:
 ```sh
-./scripts/run-flink-app.sh 2 16
-```
-This will run:
-```sh
-java --add-opens java.base/java.util=ALL-UNNAMED \
-  -jar /app/app.jar -v -nr 2 -nt 16 -f /app/experiment.txt
+./scripts/run-experiment.sh 2 16
 ```
 
 ### **4️⃣ Stop the Cluster**
@@ -93,7 +88,7 @@ This file controls the evolutionary process and genetic algorithm parameters.
 
 Example:
 ```text
-$nEvals = [1000]
+$nEvals = [5000]
 
 ea.experiment(
   runs = (randomGenerator = (seed = [1:1:10]) * [m.defaultRG()]) *
@@ -116,9 +111,21 @@ ea.experiment(
         ea.f.solution(of = ea.f.best(); format = "%s")
       ]
     );
+    ea.l.bestCsv(
+      path = "../RESULTS/{name}/{startTime}/cep-best.csv";
+      functions = [
+        ea.f.size(of = ea.f.genotype(of = ea.f.best()));
+        ea.f.quality(of = ea.f.best());
+        ea.f.genotype(of = ea.f.best())
+      ]
+    );
     ea.l.savePlotForExp(
-      path = "../RESULTS/{name}/{startTime}/fitness";
+      path = "../RESULTS/{name}/{startTime}/bestFitness";
       plot = ea.plot.multi.quality(x=ea.f.nOfEvals())
+    );
+    ea.l.savePlotForExp(
+      path = "../RESULTS/{name}/{startTime}/bestSize";
+      plot = ea.plot.multi.xyExp(x=ea.f.nOfEvals(); y=ea.f.size(of = ea.f.genotype(of = ea.f.best())))
     )
   ]
 )
