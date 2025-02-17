@@ -78,8 +78,7 @@ conditionAttributes=successful_login
 # noSkip | skipToNext | skipPastLastEvent
 targetStrategy = skipToNext
 individualStrategy = skipToNext
-
-
+```
 ## 🐳 Running with Docker
 
 ### **1️⃣ Prerequisites**
