@@ -1,4 +1,4 @@
-$nEvals = [1000]
+$nEvals = [5000]
 
 ea.experiment(
   runs = (randomGenerator = (seed = [1:1:10]) * [m.defaultRG()]) *
@@ -21,9 +21,29 @@ ea.experiment(
         ea.f.solution(of = ea.f.best(); format = "%s")
       ]
     );
+    ea.l.bestCsv(
+      path = "../RESULTS/{name}/{startTime}/cep-best.csv";
+      functions = [
+        ea.f.size(of = ea.f.genotype(of = ea.f.best()));
+        ea.f.quality(of = ea.f.best());
+        ea.f.genotype(of = ea.f.best())
+      ]
+    );
     ea.l.savePlotForExp(
-      path = "../RESULTS/{name}/{startTime}/fitness";
+      path = "../RESULTS/{name}/{startTime}/bestFitness";
       plot = ea.plot.multi.quality(x=ea.f.nOfEvals())
+    );
+    ea.l.savePlotForExp(
+      path = "../RESULTS/{name}/{startTime}/bestSize";
+      plot = ea.plot.multi.xyExp(x=ea.f.nOfEvals(); y=ea.f.size(of = ea.f.genotype(of = ea.f.best())))
     )
   ]
 )
+
+
+
+
+
+
+
+

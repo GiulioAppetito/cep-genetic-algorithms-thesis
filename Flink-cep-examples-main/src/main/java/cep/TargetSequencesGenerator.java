@@ -1,6 +1,8 @@
 package cep;
 
 import events.BaseEvent;
+import utils.ColoredText;
+
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternSelectFunction;
@@ -10,33 +12,61 @@ import org.apache.flink.cep.pattern.Pattern;
 import org.apache.flink.cep.pattern.conditions.SimpleCondition;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamUtils;
-import utils.ColoredText;
-
+import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.util.Collector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.time.Duration;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.List;
-
 import static utils.Utils.loadConfig;
 
 public class TargetSequencesGenerator {
 
-    // Generate a list of patterns
+    private static final Logger logger = LoggerFactory.getLogger(TargetSequencesGenerator.class);
+
     public static List<Pattern<BaseEvent, ?>> createTargetPatterns() throws Exception {
         List<Pattern<BaseEvent, ?>> targetPatterns = new ArrayList<>();
-        // Define the pattern for 3 or more failed login attempts for a specific IP address within a time interval
+
         String configPath = System.getenv("CONFIG_PATH");
         Properties myConfig = loadConfig(configPath);
         String targetStrategy = myConfig.getProperty("targetStrategy", "");
+        long targetWithinWindowSeconds = Long.parseLong(myConfig.getProperty("targetWithinWindowSeconds", ""));
+        long targetFromTimes = Long.parseLong(myConfig.getProperty("targetFromTimes", ""));
+        long targetToTimes = Long.parseLong(myConfig.getProperty("targetToTimes", ""));
+
         AfterMatchSkipStrategy skipStrategy = switch (targetStrategy) {
             case "noSkip" -> AfterMatchSkipStrategy.noSkip();
             case "skipToNext" -> AfterMatchSkipStrategy.skipToNext();
             case "skipPastLastEvent" -> AfterMatchSkipStrategy.skipPastLastEvent();
             default -> throw new IllegalArgumentException("Invalid AfterMatchSkipStrategy: " + targetStrategy);
         };
-        System.out.println(ColoredText.GREEN+"Selected TARGET AfterMatchSkipStrategy: " + skipStrategy+ColoredText.RESET);
 
-        Pattern<BaseEvent, ?> loginPattern = Pattern.<BaseEvent>begin("failed_logins", skipStrategy)
+        System.out.println(ColoredText.GREEN + "[TargetSequencesGenerator] Selected Target AfterMatchSkipStrategy: }" + skipStrategy);
+        System.out.println("[TargetSequencesGenerator] targetWithinWindowSeconds is: "+ targetWithinWindowSeconds);
+        System.out.println("[TargetSequencesGenerator] targetTimes is: "+ targetFromTimes +","+targetToTimes + ColoredText.RESET);
+
+        Pattern<BaseEvent, ?> loginPattern = Pattern.<BaseEvent>begin("failed_login")
+        .where(new SimpleCondition<>() {
+            @Override
+            public boolean filter(BaseEvent event) {
+                Map<String, Object> eventMap = event.toMap();
+                Boolean successfulLogin = (Boolean) eventMap.get("successful_login");
+                
+                boolean isFailedLogin = successfulLogin != null && !successfulLogin; // Controllo che sia false
+                
+                if (isFailedLogin) {
+                    System.out.println("Failed login detected: "+ eventMap);
+                }
+                
+                return isFailedLogin;
+            }
+        })
+        .times((int)targetFromTimes, (int)targetToTimes)  // Da 5 a 10 login falliti
+        .within(Duration.ofSeconds(targetWithinWindowSeconds));  // Finestra temporale
+
+        Pattern<BaseEvent, ?> loginPattern2 = Pattern.<BaseEvent>begin("failed_logins", skipStrategy)
                 .where(new SimpleCondition<>() {
                     @Override
                     public boolean filter(BaseEvent event) {
@@ -60,39 +90,37 @@ public class TargetSequencesGenerator {
                 });
 
 
-
-        targetPatterns.add(loginPattern);
+        targetPatterns.add(loginPattern2);
         return targetPatterns;
     }
 
-    // Save matched sequences to a file
     public static void saveMatchesToFile(List<Pattern<BaseEvent, ?>> patterns, DataStream<BaseEvent> inputDataStream, String targetDatasetPath, String keyByField) throws Exception {
 
-        // Determine whether to use the keyBy function to group the data
+        DataStream<BaseEvent> loggedStream = inputDataStream.process(new ProcessFunction<BaseEvent, BaseEvent>() {
+            @Override
+            public void processElement(BaseEvent event, Context context, Collector<BaseEvent> collector) throws Exception {
+                logger.debug("Received event: {}", event.toMap());
+                collector.collect(event);
+            }
+        });
+
         DataStream<BaseEvent> streamToUse;
         if (keyByField != null && !keyByField.isEmpty()) {
-            // If a keyByField is provided, apply the keyBy function
-            System.out.println(ColoredText.YELLOW+"[TargetSequenceGenerator] Applying key_by with key: "+keyByField+ColoredText.RESET);
-            streamToUse = inputDataStream.keyBy(new KeySelector<BaseEvent, Object>() {
-                @Override
-                public Object getKey(BaseEvent event) {
-                    // Extract the value of the specified field from the event's map
-                    return event.toMap().get(keyByField);
-                }
-            });
+            System.out.println(ColoredText.GREEN + "[TargetSequenceGenerator] Applying key_by with key: "+ keyByField + ColoredText.RESET);
+            streamToUse = loggedStream.keyBy((KeySelector<BaseEvent, Object>) event -> event.toMap().get(keyByField));
         } else {
-            // If no keyByField is provided, use the original data stream
-            System.out.println(ColoredText.YELLOW+"[TargetSequenceGenerator] NOT applying key_by."+ColoredText.RESET);
-            streamToUse = inputDataStream;
+            System.out.println(ColoredText.GREEN +"[TargetSequenceGenerator] NOT applying key_by."+ ColoredText.RESET);
+            streamToUse = loggedStream;
         }
 
+        int length = 0;
 
         try (FileWriter writer = new FileWriter(targetDatasetPath)) {
             for (Pattern<BaseEvent, ?> pattern : patterns) {
                 PatternStream<BaseEvent> patternStream = CEP.pattern(streamToUse, pattern);
-                DataStream<List<BaseEvent>> matchedStream = patternStream.select(new PatternToListSelectFunction());
-
-                Iterator<List<BaseEvent>> iterator = DataStreamUtils.collect(matchedStream);
+                DataStream<List<BaseEvent>> matchedStream = patternStream.select(new LoggingPatternSelectFunction());
+                
+                Iterator<List<BaseEvent>> iterator = DataStreamUtils.collect(matchedStream, "Target Sequences Collection");
                 while (iterator.hasNext()) {
                     List<BaseEvent> eventsList = iterator.next();
                     List<Map<String, Object>> sequence = new ArrayList<>();
@@ -100,8 +128,9 @@ public class TargetSequencesGenerator {
                         sequence.add(new HashMap<>(event.toMap()));
                     }
                     writer.write(sequenceToCsvLine(sequence) + "\n");
+                    length++;
                 }
-                System.out.println(ColoredText.PURPLE+"[TargetSequencesGenerator]: Finished to write the target file."+ColoredText.RESET);
+                System.out.println(ColoredText.GREEN + "[TargetSequencesGenerator]: Finished writing the target file with "+ length +" matches." + ColoredText.RESET);
             }
         } catch (IOException e) {
             throw new RuntimeException("Error writing matched sequences to file", e);
@@ -116,9 +145,17 @@ public class TargetSequencesGenerator {
         return builder.toString();
     }
 
-    private static class PatternToListSelectFunction implements PatternSelectFunction<BaseEvent, List<BaseEvent>> {
+    private static class LoggingPatternSelectFunction implements PatternSelectFunction<BaseEvent, List<BaseEvent>> {
         @Override
         public List<BaseEvent> select(Map<String, List<BaseEvent>> match) {
+            logger.info("### MATCH FOUND ###");
+            for (Map.Entry<String, List<BaseEvent>> entry : match.entrySet()) {
+                logger.info("Pattern: {}", entry.getKey());
+                for (BaseEvent event : entry.getValue()) {
+                    logger.info("Event in match: {}", event.toMap());
+                }
+            }
+            logger.info("###################");
             List<BaseEvent> collectedEvents = new ArrayList<>();
             match.values().forEach(collectedEvents::addAll);
             return collectedEvents;

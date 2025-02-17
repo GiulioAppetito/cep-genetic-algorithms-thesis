@@ -61,7 +61,7 @@ public class RepresentationToPatternMapper<E extends BaseEvent> {
         // Apply within clause if specified
         if (representation.withinClause() != null) {
             long actualDuration = Math.min(duration, (long) representation.withinClause().duration());
-            flinkPattern = flinkPattern.within(Duration.ofSeconds(actualDuration));
+            flinkPattern = flinkPattern.within(Duration.ofMillis(actualDuration));
         }
 
         return flinkPattern;

@@ -1,51 +1,89 @@
 package fitness.utils;
 
 import events.BaseEvent;
+import org.apache.flink.api.common.JobID;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternSelectFunction;
 import org.apache.flink.cep.PatternStream;
 import org.apache.flink.cep.pattern.Pattern;
+import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.CloseableIterator;
 import representation.PatternRepresentation;
-
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.concurrent.*;
 import java.util.*;
 
 public class EventSequenceMatcher {
 
+    // File path inside the container
+    private static final String CSV_FILE_PATH = "/RESULTS/job_times.csv";
+
     /**
      * Collects matching sequences from the input data stream using the given pattern.
      */
-    public Set<List<Map<String, Object>>> collectSequenceMatches(
-            StreamExecutionEnvironment createdEnv,
-            DataStream<BaseEvent> inputDataStream,
-            Pattern<BaseEvent, ?> generatedPattern,
-            String type,
-            PatternRepresentation.KeyByClause keyByClause,
-            String outputCsvPath,
-            PatternRepresentation patternRepresentation) throws Exception {
+    public Map<String, Object> collectSequenceMatches(
+        StreamExecutionEnvironment remoteEnvironment,
+        DataStream<BaseEvent> inputDataStream,
+        Pattern<BaseEvent, ?> generatedPattern,
+        String type,
+        PatternRepresentation.KeyByClause keyByClause,
+        PatternRepresentation patternRepresentation,
+        long timeoutSeconds, 
+        TimeUnit timeUnit) throws Exception {
 
-        // Apply keyBy if a key is specified in the keyByClause
-        DataStream<BaseEvent> keyedStream = (keyByClause != null && keyByClause.key() != null)
-                ? inputDataStream.keyBy(event -> event.toMap().get(keyByClause.key()))
-                : inputDataStream;
+    long startTime = System.nanoTime();
 
-        // Create a data stream of matched sequences
-        DataStream<List<Map<String, Object>>> matchedStream = applyPatternToDatastream(keyedStream, generatedPattern);
+    DataStream<BaseEvent> keyedStream = (keyByClause != null && keyByClause.key() != null)
+            ? inputDataStream.keyBy(event -> event.toMap().get(keyByClause.key()))
+            : inputDataStream;
 
-        // Execute the job on the cluster and collect results
-        Set<List<Map<String, Object>>> detectedSequences = new HashSet<>();
-        String jobName = patternRepresentation.toString();
+    DataStream<List<Map<String, Object>>> matchedStream = applyPatternToDatastream(keyedStream, generatedPattern);
+    Set<List<Map<String, Object>>> detectedSequences = new HashSet<>();
+    String jobName = patternRepresentation.toString();
+
+    // Rimuoviamo executeAsync per evitare doppia esecuzione
+    int foundMatches = 0;
+    boolean completedInTime = false;
+
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    Future<Integer> future = executor.submit(() -> {
+        int matchCount = 0;
         try (CloseableIterator<List<Map<String, Object>>> iterator = matchedStream.executeAndCollect(jobName)) {
             while (iterator.hasNext()) {
-                List<Map<String, Object>> sequence = iterator.next();
-                detectedSequences.add(sequence);
+                detectedSequences.add(iterator.next());
+                matchCount++;
             }
         }
+        return matchCount;
+    });
 
-        return detectedSequences;
+    try {
+        foundMatches = future.get(timeoutSeconds, timeUnit);
+        completedInTime = true;
+    } catch (TimeoutException e) {
+        System.err.println("[ERROR] Timeout reached! Cancelling job...");
+        future.cancel(true);
+        detectedSequences.clear();
+    } finally {
+        executor.shutdown();
     }
+
+    long endTime = System.nanoTime();
+    double durationSeconds = (endTime - startTime) / 1_000_000_000.0;
+
+    System.out.println(completedInTime ? "[LOG] Query completed successfully." : "[WARNING] Query cancelled due to timeout.");
+    System.out.println("[LOG] Final detected sequences: " + detectedSequences);
+
+    Map<String, Object> result = new HashMap<>();
+    result.put("detectedSequences", detectedSequences);
+    result.put("durationSeconds", durationSeconds);
+    result.put("foundMatches", foundMatches);
+
+    return result;
+}
 
     /**
      * Creates a data stream of matched sequences for a given pattern.
@@ -57,7 +95,7 @@ public class EventSequenceMatcher {
         // Associate the pattern with the data stream
         PatternStream<BaseEvent> patternStream = CEP.pattern(inputDataStream, pattern);
 
-        // Return the selected matches as a list of maps
+        // Select matches as a list of maps
         return patternStream.select(new PatternToListSelectFunction());
     }
 

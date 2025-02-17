@@ -35,7 +35,7 @@ public class GrammarBuilder {
         final int maxTimesDigit = String.valueOf(numEvents).length();
 
         // Define the top-level pattern structure
-        grammar.append("<pattern> ::= <events> <withinClause> <key_by> | <events> <withinClause> | <events> | <events> <key_by>\n");
+        grammar.append("<pattern> ::= <events> <withinClause> <key_by> | <events> <withinClause>\n");
 
         // Define within clause (time-bound constraint)
         if (grammarType.equals(GrammarTypes.BOUNDED_DURATION) || grammarType.equals(GrammarTypes.BOUNDED_DURATION_AND_KEY_BY)) {

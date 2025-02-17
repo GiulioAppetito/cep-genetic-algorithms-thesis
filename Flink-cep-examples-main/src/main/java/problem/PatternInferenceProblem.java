@@ -6,6 +6,7 @@ import events.factory.DataStreamFactory;
 import utils.ColoredText;
 import utils.CsvAnalyzer;
 import fitness.FitnessCalculator;
+import fitness.fitnesstypes.FitnessFunctionEnum;
 import fitness.utils.TargetSequenceReader;
 import grammar.GrammarGenerator;
 import grammar.datatypes.GrammarTypes;
@@ -20,21 +21,21 @@ import representation.PatternRepresentation;
 import representation.mappers.TreeToRepresentationMapper;
 
 import java.util.*;
-import java.util.List;
 import java.util.function.Function;
 
 import static utils.Utils.*;
 
-public class  PatternInferenceProblem implements GrammarBasedProblem<String, PatternRepresentation>, TotalOrderQualityBasedProblem<PatternRepresentation, Double> {
+public class PatternInferenceProblem implements GrammarBasedProblem<String, PatternRepresentation>, TotalOrderQualityBasedProblem<PatternRepresentation, Double> {
     private final Set<List<Map<String, Object>>> targetSequences;
     private final StringGrammar<String> grammar;
     private final FitnessCalculator fitnessCalculator;
+    private final FitnessFunctionEnum fitnessFunctionEnum; 
     private final String csvFilePath;
     private final String targetDatasetPath;
     private final long duration;
     private final long numEvents;
 
-    public PatternInferenceProblem(String configPath) throws Exception {
+    public PatternInferenceProblem(String configPath, FitnessFunctionEnum fitnessFunction) throws Exception {
         Properties myConfig = loadConfig(configPath);
 
         String datasetDirPath = getRequiredProperty(myConfig, "datasetDirPath");
@@ -42,10 +43,20 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
         this.targetDatasetPath = getRequiredProperty(myConfig, "targetDatasetPath");
         this.duration = CsvAnalyzer.calculateDurationFromCsv(csvFilePath);
         this.numEvents = CsvAnalyzer.countRowsInCsv(csvFilePath);
+        this.fitnessFunctionEnum = fitnessFunction;
 
         // Generate target patterns and save matches to a file
-        StreamExecutionEnvironment localEnv = StreamExecutionEnvironment.getExecutionEnvironment();
-        DataStream<BaseEvent> eventStream = DataStreamFactory.createDataStream(localEnv, csvFilePath);
+        StreamExecutionEnvironment targetRemoteEnvironment = StreamExecutionEnvironment.createRemoteEnvironment(
+                        "jobmanager",
+                        8081,
+                        "/workspace/target/flinkCEP-Patterns-0.1-jar-with-dependencies.jar"
+
+                );
+        ExecutionConfig config = targetRemoteEnvironment.getConfig();
+        targetRemoteEnvironment.getCheckpointConfig().disableCheckpointing();
+        config.registerKryoType(java.util.HashMap.class);
+        config.registerKryoType(BaseEvent.class);
+        DataStream<BaseEvent> eventStream = DataStreamFactory.createDataStream(targetRemoteEnvironment, csvFilePath);
         TargetSequencesGenerator.saveMatchesToFile(
                 TargetSequencesGenerator.createTargetPatterns(),
                 eventStream,
@@ -79,7 +90,7 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
                 StreamExecutionEnvironment remoteEnvironment = StreamExecutionEnvironment.createRemoteEnvironment(
                         "jobmanager",
                         8081,
-                        "/app/app.jar"
+                        "/workspace/target/flinkCEP-Patterns-0.1-jar-with-dependencies.jar"
                 );
 
                 ExecutionConfig config = remoteEnvironment.getConfig();
@@ -92,6 +103,7 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
 
                 // Calculate fitness of the Pattern
                 double fitness =  fitnessCalculator.calculateFitness(
+                        this.fitnessFunctionEnum,
                         remoteEnvironment,
                         eventStream,
                         new representation.mappers.RepresentationToPatternMapper<BaseEvent>().convert(patternRepresentation, duration, numEvents),
@@ -108,12 +120,12 @@ public class  PatternInferenceProblem implements GrammarBasedProblem<String, Pat
 
 
     @Override
-    public StringGrammar<String> getGrammar() {
+    public StringGrammar<String> grammar() {
         return grammar;
     }
 
     @Override
-    public Function<Tree<String>, PatternRepresentation> getSolutionMapper() {
+    public Function<Tree<String>, PatternRepresentation> solutionMapper() {
         return new TreeToRepresentationMapper();
     }
 

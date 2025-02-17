@@ -1,5 +1,6 @@
 package problem;
 
+import fitness.fitnesstypes.FitnessFunctionEnum;
 import io.github.ericmedvet.jnb.core.Cacheable;
 import io.github.ericmedvet.jnb.core.Discoverable;
 
@@ -15,8 +16,19 @@ public class Problems {
     @Cacheable
     public static PatternInferenceProblem patternInferenceProblem() throws Exception {
         String configPath = System.getenv("CONFIG_PATH");
-        //String configPath = "src/main/resources/config.properties";
+        FitnessFunctionEnum fitnessFunction = FitnessFunctionEnum.FBETA;
 
-        return new PatternInferenceProblem(configPath);
+        return new PatternInferenceProblem(configPath, fitnessFunction);
     }
+
+    @SuppressWarnings("unused")
+    @Cacheable
+    public static AlternativeProblem alternativeProblem() throws Exception {
+        String configPath = System.getenv("CONFIG_PATH");
+        FitnessFunctionEnum fitnessFunction = FitnessFunctionEnum.BINARYEVENTS;
+
+        return new AlternativeProblem(configPath, fitnessFunction);
+    }
+
+
 }

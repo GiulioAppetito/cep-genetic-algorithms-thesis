@@ -7,13 +7,14 @@ if [ $# -lt 2 ]; then
     exit 1
 fi
 
-# Parametri
+# Parameters
 NR=$1
 NT=$2
 
 echo "🚀 Starting up experiment with nr=$NR, nt=$NT..."
 
 docker exec flink-app java --add-opens java.base/java.util=ALL-UNNAMED \
-  -jar /app/app.jar -v -nr "$NR" -nt "$NT" -f /app/experiment.txt
+  -jar /workspace/target/flinkCEP-Patterns-0.1-jar-with-dependencies.jar \
+  -v -nr "$NR" -nt "$NT" -f /workspace/src/main/resources/experiments/experiment.txt
 
 echo "✅ Experiment succeeded!"
