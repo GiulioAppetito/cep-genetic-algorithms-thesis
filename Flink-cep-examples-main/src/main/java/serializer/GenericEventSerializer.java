@@ -14,9 +14,7 @@ public class GenericEventSerializer extends Serializer<GenericEvent> {
     @Override
     public void write(Kryo kryo, Output output, GenericEvent event) {
         try {
-            // Serializza il timestamp
             output.writeLong(event.getTimestamp());
-            // Serializza la mappa degli attributi
             kryo.writeObject(output, new HashMap<>(event.getAttributes()));
         } finally {
             output.flush();
@@ -25,9 +23,7 @@ public class GenericEventSerializer extends Serializer<GenericEvent> {
 
     @Override
     public GenericEvent read(Kryo kryo, Input input, Class<GenericEvent> type) {
-        // Legge il timestamp
         long timestamp = input.readLong();
-        // Legge la mappa degli attributi
         HashMap attributes = kryo.readObject(input, HashMap.class);
 
         // Cast the attributes to a type-safe map
