@@ -42,7 +42,7 @@ public class ScoreCalculator {
     int falsePositives = 0;
     int falseNegatives = 0;
 
-    // Creazione di un insieme di eventi target e rilevati
+    // Create detected and target events
     Set<String> allTargetEvents = extractEventsFromSequences(targetSequences);
     Set<String> allDetectedEvents = new HashSet<>();
 
@@ -50,7 +50,6 @@ public class ScoreCalculator {
         allDetectedEvents.addAll(extractEventsFromSerializedSequence(serializedDetected));
     }
 
-    // Calcolo TP e FN
     for (String event : allTargetEvents) {
         if (allDetectedEvents.contains(event)) {
             truePositives++;
@@ -59,24 +58,20 @@ public class ScoreCalculator {
         }
     }
 
-    // Calcolo FP
     for (String event : allDetectedEvents) {
         if (!allTargetEvents.contains(event)) {
             falsePositives++;
         }
     }
 
-    // Calcolo Precision e Recall
     double precision = (truePositives + falsePositives == 0) ? 0.0 : (double) truePositives / (truePositives + falsePositives);
     double recall = (truePositives + falseNegatives == 0) ? 0.0 : (double) truePositives / (truePositives + falseNegatives);
 
-    // Calcolo F-beta score
     double betaSquared = beta * beta;
     double fBetaScore = (precision + recall == 0.0)
             ? 0.0
             : (1 + betaSquared) * (precision * recall) / ((betaSquared * precision) + recall);
 
-    // Stampa risultati se richiesto
     String configPath = System.getenv("CONFIG_PATH");
     Properties myConfig = null;
     try {
@@ -94,9 +89,6 @@ public class ScoreCalculator {
     return fBetaScore;
 }
 
-/**
- * Estrae tutti gli eventi dalle sequenze target.
- */
 private static Set<String> extractEventsFromSequences(Set<List<Map<String, Object>>> sequences) {
     Set<String> events = new HashSet<>();
     for (List<Map<String, Object>> sequence : sequences) {
@@ -107,9 +99,6 @@ private static Set<String> extractEventsFromSequences(Set<List<Map<String, Objec
     return events;
 }
 
-/**
- * Estrae gli eventi da una sequenza serializzata.
- */
 private static Set<String> extractEventsFromSerializedSequence(String serializedSequence) {
     Set<String> events = new HashSet<>(Arrays.asList(serializedSequence.split(";")));
     return events;
