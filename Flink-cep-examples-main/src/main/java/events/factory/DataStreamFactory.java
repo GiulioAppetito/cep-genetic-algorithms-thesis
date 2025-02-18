@@ -20,7 +20,7 @@ import java.util.*;
 public class DataStreamFactory {
 
     public static DataStream<BaseEvent> createDataStream(StreamExecutionEnvironment env, String csvFilePath) {
-        // Imposta il report period dei watermark a 500ms
+        // Set report period to 500 ms
         env.getConfig().setAutoWatermarkInterval(500);
 
         List<BaseEvent> events = new ArrayList<>();
@@ -60,7 +60,7 @@ public class DataStreamFactory {
                 .assignTimestampsAndWatermarks(new LoggingWatermarkStrategy());
     }
     
-    // Classe per loggare i Watermark generati
+    // Log generated watermarks
     private static class LoggingWatermarkStrategy implements WatermarkStrategy<BaseEvent> {
         private static final Logger LOG = LoggerFactory.getLogger(LoggingWatermarkStrategy.class);
         @Override
