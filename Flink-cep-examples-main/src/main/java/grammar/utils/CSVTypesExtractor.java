@@ -22,13 +22,12 @@ public class CSVTypesExtractor {
 
             for (CSVRecord record : csvParser) {
                 for (String column : record.toMap().keySet()) {
-                    // Filtra gli attributi in base a allowedAttributes
                     if (allowedAttributes != null && !allowedAttributes.isEmpty() && !allowedAttributes.contains(column)) {
-                        continue; // Salta gli attributi non consentiti
+                        continue; 
                     }
 
                     if (column.equalsIgnoreCase("timestamp")) {
-                        continue; // Salta il timestamp
+                        continue; 
                     }
                     String value = record.get(column);
                     DataTypesEnum currentType = inferType(value);
@@ -52,7 +51,7 @@ public class CSVTypesExtractor {
             for (CSVRecord record : csvParser) {
                 for (String column : record.toMap().keySet()) {
                     if (!columnTypes.containsKey(column)) {
-                        continue; // Salta colonne non presenti in columnTypes (già filtrate da allowedAttributes)
+                        continue; 
                     }
                     String value = record.get(column);
                     if (columnTypes.get(column) == DataTypesEnum.STRING) {
