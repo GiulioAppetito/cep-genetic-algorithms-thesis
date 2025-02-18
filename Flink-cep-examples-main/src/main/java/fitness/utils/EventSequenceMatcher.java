@@ -44,7 +44,6 @@ public class EventSequenceMatcher {
     Set<List<Map<String, Object>>> detectedSequences = new HashSet<>();
     String jobName = patternRepresentation.toString();
 
-    // Rimuoviamo executeAsync per evitare doppia esecuzione
     int foundMatches = 0;
     boolean completedInTime = false;
 
