@@ -54,7 +54,7 @@ public class TargetSequencesGenerator {
                 Map<String, Object> eventMap = event.toMap();
                 Boolean successfulLogin = (Boolean) eventMap.get("successful_login");
                 
-                boolean isFailedLogin = successfulLogin != null && !successfulLogin; // Controllo che sia false
+                boolean isFailedLogin = successfulLogin != null && !successfulLogin; 
                 
                 if (isFailedLogin) {
                     System.out.println("Failed login detected: "+ eventMap);
@@ -63,8 +63,8 @@ public class TargetSequencesGenerator {
                 return isFailedLogin;
             }
         })
-        .times((int)targetFromTimes, (int)targetToTimes)  // Da 5 a 10 login falliti
-        .within(Duration.ofSeconds(targetWithinWindowSeconds));  // Finestra temporale
+        .times((int)targetFromTimes, (int)targetToTimes)  
+        .within(Duration.ofSeconds(targetWithinWindowSeconds)); 
 
         Pattern<BaseEvent, ?> loginPattern2 = Pattern.<BaseEvent>begin("failed_logins", skipStrategy)
                 .where(new SimpleCondition<>() {
@@ -73,18 +73,16 @@ public class TargetSequencesGenerator {
                         Map<String, Object> eventMap = event.toMap();
                         Object successful_login = eventMap.get("successful_login");
 
-                        // Eventi con successful_login = false
                         return Boolean.FALSE.equals(successful_login);
                     }
-                }).oneOrMore() // Uno o più eventi di login falliti
-                .next("successful_login") // Seguito da un evento di login corretto
+                }).oneOrMore() 
+                .next("successful_login") 
                 .where(new SimpleCondition<>() {
                     @Override
                     public boolean filter(BaseEvent event) {
                         Map<String, Object> eventMap = event.toMap();
                         Object successful_login = eventMap.get("successful_login");
 
-                        // Evento con successful_login = true
                         return Boolean.TRUE.equals(successful_login);
                     }
                 });
