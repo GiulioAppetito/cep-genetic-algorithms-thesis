@@ -70,16 +70,4 @@ public class CsvAnalyzer {
         return keyCandidates;
     }
 
-
-    public static void main(String[] args) {
-        String originalCsvFilePath = "C:\\Users\\giuli\\IdeaProjects\\cep-genetic-algorithms-thesis-dev2\\Flink-cep-examples-main\\src\\main\\resources\\datasets\\sources\\sensorData.csv";
-        String targetCsvFilePath = "C:\\Users\\giuli\\IdeaProjects\\cep-genetic-algorithms-thesis-dev2\\Flink-cep-examples-main\\src\\main\\resources\\datasets\\target\\targetDataset.csv";
-
-        try {
-            System.out.println("Analyzing Original Dataset:");
-            findKeyCandidatesFromCsv(originalCsvFilePath);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }
